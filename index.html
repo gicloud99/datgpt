@@ -3,189 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DatGPT 4.0</title>
+    <title>DatGPT 5.0 - Research & Glass UI</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap');
+
+        :root {
+            --bg-color: #0f0f12;
+            --glass-bg: rgba(30, 30, 35, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --primary: #00dc82;
+            --primary-glow: rgba(0, 220, 130, 0.4);
+            --research: #7b61ff;
+            --research-glow: rgba(123, 97, 255, 0.4);
+            --text: #ececf1;
+            --user-msg: linear-gradient(135deg, #00dc82 0%, #00a86b 100%);
+            --ai-msg: rgba(255, 255, 255, 0.05);
+        }
 
         * { box-sizing: border-box; }
 
         body {
             margin: 0; padding: 0;
-            background-color: #1e1e1e;
-            color: #eee;
-            font-family: 'Inter', sans-serif;
-            height: 100vh;
-            height: 100dvh;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(0, 220, 130, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(123, 97, 255, 0.08) 0%, transparent 40%);
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            height: 100vh; height: 100dvh;
             overflow: hidden;
-            font-size: 14px; /* Giảm font base */
+            font-size: 15px;
         }
 
         #app-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            background: #1e1e1e;
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column;
             position: relative;
         }
 
-        /* Header gọn hơn */
+        /* HEADER GLASS */
         header {
-            padding: 10px 20px;
-            background: rgba(255,255,255,0.03);
-            border-bottom: 1px solid #333;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-shrink: 0;
-            height: 50px;
+            padding: 15px 25px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 10;
         }
-        .app-title { font-size: 15px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px; }
-        .status-dot { width: 8px; height: 8px; background: #00ff88; border-radius: 50%; box-shadow: 0 0 8px #00ff88; }
-        .live-badge { font-size: 10px; background: #e74c3c; color: white; padding: 2px 5px; border-radius: 3px; display: none; animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0.6; } }
+        .logo-area { display: flex; align-items: center; gap: 10px; }
+        .logo-icon { font-size: 20px; }
+        .app-title { font-size: 18px; font-weight: 600; background: linear-gradient(to right, #fff, #aaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .mode-badge { 
+            font-size: 10px; padding: 3px 8px; border-radius: 12px; 
+            background: #222; border: 1px solid #444; color: #888; text-transform: uppercase; letter-spacing: 1px;
+            transition: 0.3s;
+        }
+        .mode-badge.active { background: var(--research); color: #fff; border-color: var(--research); box-shadow: 0 0 10px var(--research-glow); }
 
-        /* Vùng Chat */
+        /* CHAT AREA */
         #chat-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px 0;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            flex: 1; overflow-y: auto;
+            padding: 20px 0;
+            display: flex; flex-direction: column; gap: 20px;
             scroll-behavior: smooth;
-            align-items: center;
         }
 
         .msg-row {
-            width: 100%;
-            padding: 0 20px;
-            display: flex;
-            flex-direction: column;
+            width: 100%; padding: 0 20px;
+            display: flex; flex-direction: column;
+            animation: slideIn 0.3s ease-out;
         }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
         .msg-row.user { align-items: flex-end; }
         .msg-row.ai { align-items: flex-start; }
 
         .msg {
-            max-width: 750px;
-            width: fit-content;
-            padding: 8px 14px; /* Giảm padding */
-            border-radius: 8px;
-            line-height: 1.5;
-            font-size: 14.5px; /* Font chữ vừa phải */
-            word-wrap: break-word;
-            position: relative;
+            max-width: 800px; width: fit-content;
+            padding: 12px 18px; border-radius: 18px;
+            line-height: 1.6; font-size: 15px; position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
-        .msg.user { background: #10a37f; color: #fff; border-bottom-right-radius: 2px; }
-        .msg.ai { background: #2f2f2f; border: 1px solid #444; border-bottom-left-radius: 2px; width: 100%; max-width: 750px; }
+        .msg.user { 
+            background: var(--user-msg); 
+            color: #fff; 
+            border-bottom-right-radius: 4px; 
+        }
         
-        pre { background: #111 !important; padding: 10px; border-radius: 6px; overflow-x: auto; margin: 8px 0; border: 1px solid #444; }
+        .msg.ai { 
+            background: var(--ai-msg); 
+            border: 1px solid var(--glass-border);
+            border-bottom-left-radius: 4px;
+        }
+        .msg.ai.thinking { border-color: var(--research); box-shadow: 0 0 15px rgba(123, 97, 255, 0.1); }
+
+        .role-label { font-size: 11px; margin-bottom: 5px; opacity: 0.6; font-weight: 500; display: block; }
+        
+        pre { background: rgba(0,0,0,0.3) !important; padding: 15px; border-radius: 10px; overflow-x: auto; margin: 10px 0; border: 1px solid var(--glass-border); }
         code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
-        .msg img { max-width: 100%; height: auto; border-radius: 6px; margin-top: 8px; border: 1px solid #555; }
+        .msg img { max-width: 100%; border-radius: 10px; margin-top: 10px; border: 1px solid #444; }
 
-        /* Input Area Gọn gàng */
+        /* INPUT AREA GLASS */
         .input-container {
-            padding: 15px 20px;
-            background: #1e1e1e;
-            border-top: 1px solid #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex-shrink: 0;
+            padding: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid var(--glass-border);
+            display: flex; flex-direction: column; align-items: center;
         }
 
-        .input-wrapper {
-            width: 100%;
-            max-width: 800px;
-        }
-        
-        .preview-box { display: none; margin-bottom: 8px; }
-        .preview-box img { height: 50px; border-radius: 4px; border: 1px solid #555; }
-        .preview-box span { color: #ff5555; cursor: pointer; font-size: 18px; margin-left: 10px; vertical-align: top; }
+        .input-wrapper { width: 100%; max-width: 900px; }
 
-        .input-row { display: flex; gap: 10px; align-items: flex-end; width: 100%; }
+        /* TOOLS BAR */
+        .tools { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 5px; align-items: center; }
+        .tools::-webkit-scrollbar { height: 0px; }
         
+        .pill { 
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: #ccc; 
+            padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; white-space: nowrap; transition: 0.2s; 
+            display: flex; align-items: center; gap: 6px;
+        }
+        .pill:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: #666; }
+
+        /* Toggle Research */
+        .research-toggle {
+            background: rgba(123, 97, 255, 0.1); border-color: rgba(123, 97, 255, 0.3); color: #a390ff;
+        }
+        .research-toggle.active {
+            background: var(--research); color: white; border-color: var(--research); box-shadow: 0 0 12px var(--research-glow);
+        }
+
+        .preview-box { display: none; margin-bottom: 10px; position: relative; width: fit-content; }
+        .preview-box img { height: 60px; border-radius: 8px; border: 1px solid #555; }
+        .preview-box .close-img { position: absolute; top: -8px; right: -8px; background: #333; color: white; border-radius: 50%; width: 20px; height: 20px; text-align: center; line-height: 20px; cursor: pointer; font-size: 12px; border: 1px solid #555; }
+
+        /* INPUT ROW */
+        .input-row { 
+            display: flex; gap: 12px; align-items: flex-end; width: 100%; 
+            background: rgba(0,0,0,0.2); padding: 8px; border-radius: 16px; border: 1px solid var(--glass-border);
+            transition: 0.3s;
+        }
+        .input-row:focus-within { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0, 220, 130, 0.1); }
+        .input-row.research-mode:focus-within { border-color: var(--research); box-shadow: 0 0 0 2px rgba(123, 97, 255, 0.1); }
+
         textarea {
-            flex: 1;
-            background: #2a2a2a;
-            border: 1px solid #444;
-            color: #fff;
-            padding: 10px 12px;
-            border-radius: 6px;
-            resize: none;
-            height: 42px; /* Chiều cao nhỏ gọn */
-            outline: none;
-            font-family: inherit;
-            font-size: 14px;
-            transition: 0.2s;
+            flex: 1; background: transparent; border: none; color: #fff;
+            padding: 10px; resize: none; height: 24px; max-height: 150px;
+            outline: none; font-family: inherit; font-size: 15px; line-height: 1.5;
         }
-        textarea:focus { border-color: #10a37f; background: #252525; }
 
-        /* Nút bấm nhỏ hơn */
         button {
-            height: 42px; width: 42px;
-            border: none; border-radius: 6px;
-            cursor: pointer; font-size: 18px;
-            display: flex; align-items: center; justify-content: center;
-            transition: 0.2s;
-            flex-shrink: 0;
+            height: 40px; width: 40px; border: none; border-radius: 12px;
+            cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center;
+            transition: 0.2s; background: transparent; color: #888;
         }
-        .btn-mic { background: #333; color: #fff; border: 1px solid #444; }
-        .btn-mic:hover { background: #444; }
-        .btn-mic.listening { background: #e74c3c; border-color: #c0392b; animation: pulse 1.5s infinite; }
+        button:hover { color: #fff; background: rgba(255,255,255,0.1); }
         
-        .btn-send { background: #10a37f; color: white; }
-        .btn-send:hover { background: #0e8c6d; }
+        .btn-send { background: var(--primary); color: #000; box-shadow: 0 0 10px var(--primary-glow); }
+        .btn-send:hover { background: #00b368; color: #000; transform: scale(1.05); }
+        
+        /* Chế độ Research đổi màu nút gửi */
+        .input-row.research-mode .btn-send { background: var(--research); color: #fff; box-shadow: 0 0 10px var(--research-glow); }
 
-        /* Tools Pill nhỏ hơn */
-        .tools { display: flex; gap: 8px; margin-bottom: 8px; overflow-x: auto; padding-bottom: 2px; width: 100%; justify-content: flex-start; }
-        .tools::-webkit-scrollbar { height: 2px; }
-        .pill { background: #2a2a2a; border: 1px solid #333; color: #ccc; padding: 4px 10px; border-radius: 15px; font-size: 12px; cursor: pointer; white-space: nowrap; transition: 0.2s; }
-        .pill:hover { border-color: #10a37f; color: #fff; background: #333; }
+        .btn-mic.listening { color: #e74c3c; animation: pulse 1.5s infinite; }
 
-        /* Settings Modal */
+        /* MODAL */
         #settings-modal {
             position: fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.8); z-index: 1000;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000;
             display: none; align-items: center; justify-content: center;
-            padding: 20px;
         }
         .modal-box {
-            background: #222; width: 380px; max-width: 100%; padding: 20px; border-radius: 10px;
-            border: 1px solid #444; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            background: #1a1a1e; width: 400px; padding: 30px; border-radius: 20px;
+            border: 1px solid #333; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
-        .modal-title { margin-top: 0; color: #fff; font-size: 18px; margin-bottom: 15px; }
-        .input-group { margin-bottom: 12px; }
-        .input-group label { display: block; color: #aaa; font-size: 13px; margin-bottom: 4px; }
-        
-        /* Link lấy API Key */
-        .api-link { color: #10a37f; text-decoration: none; font-weight: 600; margin-left: 5px; cursor: pointer; }
-        .api-link:hover { text-decoration: underline; }
+        .input-group input { width: 100%; padding: 12px; background: #2a2a2e; border: 1px solid #444; color: white; border-radius: 8px; margin-top: 5px; outline: none; }
+        .input-group input:focus { border-color: var(--primary); }
+        .btn-save { width: 100%; background: var(--primary); color: #000; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; margin-top: 15px; }
 
-        .input-group input { width: 100%; padding: 8px; background: #333; border: 1px solid #555; color: white; border-radius: 5px; font-size: 13px; }
-        .btn-save { width: 100%; background: #10a37f; color: white; padding: 8px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; font-size: 14px; }
-
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
-        
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
-
-        /* Mobile Adjustments */
+        /* Mobile */
         @media screen and (max-width: 768px) {
-            header { padding: 8px 15px; }
-            .msg { max-width: 95%; font-size: 14px; }
-            .input-container { padding: 10px; }
-            .input-row { gap: 8px; }
-            button { width: 40px; height: 40px; }
-            textarea { height: 40px; font-size: 14px; }
+            .msg { max-width: 90%; }
+            .modal-box { width: 90%; }
+            header { padding: 10px 15px; }
+            .input-container { padding: 15px; }
         }
     </style>
 </head>
@@ -193,22 +203,23 @@
 
     <div id="app-container">
         <header>
-            <div class="app-title">
-                <span class="status-dot"></span> 
-                DatGPT 4.0
-                <span class="live-badge" id="live-badge">● LIVE</span>
+            <div class="logo-area">
+                <span class="logo-icon">🤖</span>
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                    <span class="app-title">DatGPT 5.0</span>
+                    <span class="mode-badge" id="mode-badge">Standard</span>
+                </div>
             </div>
-            <div>
-                <button onclick="toggleSettings()" style="width:auto; height:auto; background:none; border:none; color:#aaa; font-size:13px; padding:5px; cursor:pointer">⚙️ Cài đặt</button>
-            </div>
+            <button onclick="toggleSettings()" title="Cài đặt">⚙️</button>
         </header>
 
         <div id="chat-area">
             <div class="msg-row ai">
                 <div class="msg ai">
+                    <span class="role-label">AI ASSISTANT</span>
                     👋 <b>Chào bạn!</b><br>
-                    Tôi sử dụng model <b>Gemini 2.5 Flash</b> đó hihi.<br>
-                    bạn hãy hỏi gì đi
+                    Tôi là DatGPT phiên bản giao diện mới.<br>
+                    Hãy thử tính năng <b>"Deep Research"</b> để nhận câu trả lời chuyên sâu.
                 </div>
             </div>
         </div>
@@ -216,21 +227,23 @@
         <div class="input-container">
             <div class="input-wrapper">
                 <div class="tools">
+                    <span class="pill research-toggle" id="btnResearch" onclick="toggleResearch()">
+                        🧠 Deep Research <span id="res-status">OFF</span>
+                    </span>
                     <span class="pill" onclick="clearChat()">🧹 Xóa</span>
-                    <span class="pill" onclick="setInput('Viết code Python để')">🐍 Python</span>
-                    <span class="pill" onclick="setInput('Dịch sang tiếng việt: ')">Dịch</span>
+                    <span class="pill" onclick="setInput('Phân tích chi tiết về: ')">🧐 Phân tích</span>
                     <span class="pill" onclick="exportChat()">💾 Lưu</span>
                 </div>
 
                 <div class="preview-box" id="preview-box">
                     <img id="preview-img" src="">
-                    <span onclick="removeImg()">×</span>
+                    <div class="close-img" onclick="removeImg()">×</div>
                 </div>
 
-                <div class="input-row">
-                    <button class="btn-mic" id="btnLive" title="Chế độ Hội thoại liên tục">🎧</button>
+                <div class="input-row" id="input-row-box">
+                    <button class="btn-mic" id="btnLive" title="Chế độ Live">🎧</button>
                     <button class="btn-mic" id="btnMic" title="Nhập giọng nói">🎙️</button>
-                    <textarea id="userInput" placeholder="Nhập tin nhắn..."></textarea>
+                    <textarea id="userInput" placeholder="Nhập tin nhắn..." rows="1" oninput="autoResize(this)"></textarea>
                     <button class="btn-send" id="btnSend">➤</button>
                 </div>
             </div>
@@ -239,61 +252,103 @@
 
     <div id="settings-modal">
         <div class="modal-box">
-            <h3 class="modal-title">Cài đặt</h3>
+            <h3 style="margin-top:0; color:#fff;">Cài đặt</h3>
             <div class="input-group">
-                <label>Tên hiển thị:</label>
-                <input type="text" id="cfgName" placeholder="Ví dụ: Đạt">
+                <label style="color:#aaa; font-size:13px">Tên hiển thị:</label>
+                <input type="text" id="cfgName" placeholder="Bạn">
             </div>
-            <div class="input-group">
-                <label>
-                    Gemini API Key:
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="api-link">(Lấy Key tại đây ↗)</a>
-                </label>
-                <input type="password" id="cfgKey" placeholder="Dán API Key vào đây...">
+            <div class="input-group" style="margin-top:15px">
+                <label style="color:#aaa; font-size:13px">Gemini API Key: <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--primary); text-decoration:none;">(Lấy Key)</a></label>
+                <input type="password" id="cfgKey" placeholder="Paste Key vào đây...">
             </div>
-            <button class="btn-save" onclick="saveSettings()">Lưu & Đóng</button>
-            <button onclick="toggleSettings()" style="width:100%; margin-top:8px; background:none; border:none; color:#888; cursor:pointer; font-size:13px;">Hủy</button>
+            <button class="btn-save" onclick="saveSettings()">Lưu Cấu Hình</button>
+            <button onclick="toggleSettings()" style="width:100%; margin-top:10px; background:none; border:none; color:#666; cursor:pointer;">Đóng</button>
         </div>
     </div>
 
     <script>
-        // === CẤU HÌNH ===
-        // Sử dụng model Flash 2.0 Experimental (Nhanh và mới nhất hiện tại)
-        const CONFIG = { modelId: "gemini-2.5-flash", historyLimit: 20 }; 
-        
+        // === STATE & CONFIG ===
+        const CONFIG = { modelId: "gemini-2.5-flash", historyLimit: 20 };
         let state = {
             apiKey: localStorage.getItem('gpt_key') || "",
             userName: localStorage.getItem('gpt_name') || "Bạn",
             history: [],
             isLive: false,
-            aiSpeaking: false
+            aiSpeaking: false,
+            isResearch: false // Trạng thái Research
         };
 
+        // DOM Elements
         const chatArea = document.getElementById('chat-area');
         const userInput = document.getElementById('userInput');
+        const inputRow = document.getElementById('input-row-box');
         let imgBase64 = null;
 
+        // Init
         marked.setOptions({ breaks: true, highlight: (code) => hljs.highlightAuto(code).value });
         if(!state.apiKey) setTimeout(toggleSettings, 800);
 
+        // === RESEARCH FEATURE ===
+        function toggleResearch() {
+            state.isResearch = !state.isResearch;
+            const btn = document.getElementById('btnResearch');
+            const status = document.getElementById('res-status');
+            const badge = document.getElementById('mode-badge');
+
+            if(state.isResearch) {
+                btn.classList.add('active');
+                inputRow.classList.add('research-mode');
+                status.innerText = "ON";
+                badge.innerText = "Deep Research";
+                badge.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+                inputRow.classList.remove('research-mode');
+                status.innerText = "OFF";
+                badge.innerText = "Standard";
+                badge.classList.remove('active');
+            }
+        }
+
+        // === CORE CHAT ===
         async function sendMsg() {
             const text = userInput.value.trim();
             if(!text && !imgBase64) return;
             if(!state.apiKey) { alert("Vui lòng nhập API Key!"); toggleSettings(); return; }
 
+            // UI User
             addMsg('user', text || '[Hình ảnh]', !!imgBase64);
             if(imgBase64) addMsg('user', `<img src="data:image/png;base64,${imgBase64}">`, true);
             
             userInput.value = '';
+            userInput.style.height = '24px'; // Reset height
             removeImg();
             
-            const loadingRow = addMsg('ai', '<span style="color:#888">...</span>', true);
+            // UI Loading (Research style)
+            const loadingText = state.isResearch ? '🧠 Đang nghiên cứu sâu...' : '...';
+            const loadingRow = addMsg('ai', `<span style="color:#888">${loadingText}</span>`, true);
             const loadingDiv = loadingRow.querySelector('.msg');
+            if(state.isResearch) loadingDiv.classList.add('thinking');
 
+            // Prompt Engineering cho Research Mode
+            let sysInstruct = `Bạn là trợ lý AI. Tên User: ${state.userName}. `;
+            if(state.isResearch) {
+                sysInstruct += `CHẾ ĐỘ DEEP RESEARCH ĐÃ BẬT.
+                Nhiệm vụ: Phân tích vấn đề cực kỳ chi tiết, sâu sắc và toàn diện.
+                Yêu cầu:
+                1. Chia câu trả lời thành các phần rõ ràng (Tiêu đề, Luận điểm, Ví dụ, Kết luận).
+                2. Sử dụng giọng văn chuyên gia, logic chặt chẽ.
+                3. Nếu là code, hãy giải thích từng dòng quan trọng và tối ưu hóa nó.
+                4. Cung cấp góc nhìn đa chiều.`;
+            } else {
+                sysInstruct += "Trả lời ngắn gọn, đúng trọng tâm, thân thiện.";
+            }
+
+            // Payload
             let contents = state.history.slice(-CONFIG.historyLimit);
             let parts = [];
             if(imgBase64) parts.push({ inlineData: { mimeType: "image/png", data: imgBase64 }});
-            parts.push({ text: text || "Mô tả hình này" });
+            parts.push({ text: text || "Phân tích ảnh này" });
             contents.push({ role: 'user', parts });
 
             try {
@@ -302,7 +357,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: contents,
-                        systemInstruction: { parts: [{ text: `Bạn là trợ lý ảo. Tên User: ${state.userName}. Trả lời ngắn gọn, format Code đẹp.` }] }
+                        systemInstruction: { parts: [{ text: sysInstruct }] }
                     })
                 });
 
@@ -310,14 +365,18 @@
                 if(data.error) throw new Error(data.error.message);
                 
                 const reply = data.candidates[0].content.parts[0].text;
-                loadingDiv.innerHTML = marked.parse(reply);
                 
+                loadingDiv.innerHTML = `<span class="role-label">AI ANSWER</span>` + marked.parse(reply);
+                loadingDiv.classList.remove('thinking');
+                
+                // Add Copy Buttons
                 loadingDiv.querySelectorAll('pre code').forEach(block => {
-                    block.parentElement.style.position = 'relative';
                     const btn = document.createElement('button');
-                    btn.innerText = 'Copy';
-                    btn.style.cssText = 'position:absolute; top:5px; right:5px; background:#444; color:#fff; font-size:10px; padding:2px 6px; height:auto; width:auto; border-radius:3px; margin:0;';
-                    btn.onclick = () => { navigator.clipboard.writeText(block.innerText); btn.innerText = 'OK'; setTimeout(()=>btn.innerText='Copy',1500); };
+                    btn.innerHTML = '📋';
+                    btn.className = 'copy-btn';
+                    btn.style.cssText = 'position:absolute; top:5px; right:5px; width:25px; height:25px; font-size:12px; background:#444; border-radius:4px;';
+                    btn.onclick = () => { navigator.clipboard.writeText(block.innerText); };
+                    block.parentElement.style.position = 'relative';
                     block.parentElement.appendChild(btn);
                 });
 
@@ -325,23 +384,36 @@
                 speak(reply);
 
             } catch (error) {
-                loadingDiv.innerHTML = `<span style="color:#ff5555">Lỗi: ${error.message}</span>`;
-                state.aiSpeaking = false;
+                loadingDiv.innerHTML = `<span style="color:#ff5555">⚠️ Lỗi: ${error.message}</span>`;
+                loadingDiv.classList.remove('thinking');
             }
         }
 
         function addMsg(role, text, isHtml) {
             const row = document.createElement('div');
             row.className = `msg-row ${role}`;
+            
             const div = document.createElement('div');
             div.className = `msg ${role}`;
-            div.innerHTML = isHtml ? text : marked.parse(text);
+            
+            // Label cho User
+            if(role === 'user') div.innerHTML = `<span class="role-label" style="text-align:right">YOU</span>`;
+            else div.innerHTML = `<span class="role-label">AI</span>`;
+
+            div.innerHTML += isHtml ? text : marked.parse(text);
+            
             row.appendChild(div);
             chatArea.appendChild(row);
             chatArea.scrollTop = chatArea.scrollHeight;
             return row;
         }
 
+        // === UTILS ===
+        function autoResize(el) {
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        }
+        
         function toggleSettings() {
             const modal = document.getElementById('settings-modal');
             modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
@@ -359,7 +431,34 @@
             toggleSettings();
         }
 
-        // --- Voice Logic (Giữ nguyên) ---
+        function clearChat() { chatArea.innerHTML = ''; state.history = []; }
+        function setInput(txt) { userInput.value = txt; userInput.focus(); }
+        
+        function exportChat() {
+            const blob = new Blob([state.history.map(m => `### ${m.role}:\n${m.parts[0].text}`).join('\n\n')], {type: 'text/markdown'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Chat_History.md`; a.click();
+        }
+
+        // Image & Paste Logic
+        window.addEventListener('paste', e => {
+            const item = Array.from(e.clipboardData.items).find(i => i.type.includes('image'));
+            if(item) {
+                const r = new FileReader();
+                r.onload = (ev) => { 
+                    imgBase64 = ev.target.result.split(',')[1]; 
+                    document.getElementById('preview-img').src = ev.target.result; 
+                    document.getElementById('preview-box').style.display = 'block'; 
+                };
+                r.readAsDataURL(item.getAsFile());
+            }
+        });
+        function removeImg() { imgBase64 = null; document.getElementById('preview-box').style.display = 'none'; }
+
+        // Send triggers
+        document.getElementById('btnSend').onclick = sendMsg;
+        userInput.addEventListener('keypress', e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }});
+
+        // Voice Logic (Giữ nguyên)
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
         if (SpeechRecognition) {
@@ -376,15 +475,15 @@
             recognition.onresult = (e) => {
                 const t = e.results[0][0].transcript;
                 if(state.isLive) { userInput.value = t; sendMsg(); } 
-                else { userInput.value += (userInput.value ? " " : "") + t; }
+                else { userInput.value += (userInput.value ? " " : "") + t; autoResize(userInput); }
             };
         }
         document.getElementById('btnMic').onclick = () => { if(state.isLive) return alert("Tắt chế độ Live trước!"); recognition && recognition.start(); };
         document.getElementById('btnLive').onclick = function() {
             if(!recognition) return alert("Không hỗ trợ giọng nói");
             state.isLive = !state.isLive;
-            document.getElementById('live-badge').style.display = state.isLive ? 'inline-block' : 'none';
-            this.style.background = state.isLive ? '#e74c3c' : '#333';
+            this.style.background = state.isLive ? 'rgba(231, 76, 60, 0.2)' : 'transparent';
+            this.style.color = state.isLive ? '#e74c3c' : '#888';
             state.isLive ? recognition.start() : (recognition.stop(), window.speechSynthesis.cancel());
         };
 
@@ -397,24 +496,6 @@
             u.onend = () => { state.aiSpeaking = false; if(state.isLive) setTimeout(() => recognition.start(), 500); };
             window.speechSynthesis.speak(u);
         }
-
-        function clearChat() { chatArea.innerHTML = ''; state.history = []; }
-        function setInput(txt) { userInput.value = txt; userInput.focus(); }
-        function exportChat() {
-            const blob = new Blob([state.history.map(m => `### ${m.role}:\n${m.parts[0].text}`).join('\n\n')], {type: 'text/markdown'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Chat.md`; a.click();
-        }
-        window.addEventListener('paste', e => {
-            const item = Array.from(e.clipboardData.items).find(i => i.type.includes('image'));
-            if(item) {
-                const r = new FileReader();
-                r.onload = (ev) => { imgBase64 = ev.target.result.split(',')[1]; document.getElementById('preview-img').src = ev.target.result; document.getElementById('preview-box').style.display = 'block'; };
-                r.readAsDataURL(item.getAsFile());
-            }
-        });
-        function removeImg() { imgBase64 = null; document.getElementById('preview-box').style.display = 'none'; }
-        document.getElementById('btnSend').onclick = sendMsg;
-        userInput.addEventListener('keypress', e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }});
     </script>
 </body>
 </html>
