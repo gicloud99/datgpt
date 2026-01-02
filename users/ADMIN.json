@@ -1,4 +1,21 @@
 {
   "password": "ADMIN",
-  "history": []
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "chào"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Chào ADMIN! Tôi có thể giúp gì cho bạn?"
+        }
+      ]
+    }
+  ]
 }
