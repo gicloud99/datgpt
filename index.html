@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DatGPT 3.6 - Env Config</title>
+    <title>DatGPT 3.7 - Auto Login</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
@@ -22,7 +22,6 @@
         * { box-sizing: border-box; outline: none; }
         body { margin: 0; background: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; font-size: 15px; }
         
-        /* ICON SVG */
         svg { width: 20px; height: 20px; stroke-width: 1.5; }
         .icon-sm { width: 16px; height: 16px; }
 
@@ -47,7 +46,6 @@
         .msg-row.user .msg-content { background: #27272a; padding: 10px 15px; border-radius: 12px; color: #fff; }
         .msg-row.ai .msg-content { background: transparent; padding: 0; width: 100%; }
 
-        /* Sources (Web Search) */
         .sources-container { margin-top: 15px; display: flex; gap: 8px; flex-wrap: wrap; }
         .source-chip { background: #1e1e24; border: 1px solid #333; padding: 6px 10px; border-radius: 6px; font-size: 12px; color: #aaa; text-decoration: none; display: flex; gap: 5px; transition: 0.2s; }
         .source-chip:hover { border-color: var(--color-web); color: #fff; }
@@ -80,7 +78,6 @@
         .btn-mic.listening { color: #ef4444; background: rgba(239, 68, 68, 0.1); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        /* Preview */
         .preview-box { display: none; margin-left: 10px; position: relative; }
         .preview-box img { height: 40px; border-radius: 4px; border: 1px solid #444; }
         .preview-box .btn-close { position: absolute; top: -5px; right: -5px; width: 16px; height: 16px; background: #333; border-radius: 50%; color: #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #555; }
@@ -99,7 +96,7 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         @media screen and (max-width: 768px) {
-            .btn-pill span { display: none; } /* Mobile: Ẩn chữ nút */
+            .btn-pill span { display: none; }
             .input-container { padding: 15px 10px; }
         }
     </style>
@@ -195,8 +192,8 @@
                 <input type="password" id="cfgKey">
             </div>
             <div class="input-group">
-                <label>GitHub Token (Có sẵn):</label>
-                <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
+                <label>GitHub Token (Đã điền sẵn):</label>
+                <input type="password" id="ghToken">
             </div>
             <div class="input-group">
                 <label>GitHub Owner (User):</label>
@@ -212,17 +209,16 @@
     </div>
 
     <script>
-        // === ENV CONFIGURATION ===
-        // Token mặc định bạn đã cung cấp
+        // === ENV SECRETS (ĐIỀN SẴN) ===
         const ENV = {
-            GH_TOKEN: "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",
+            GH_TOKEN: "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", // Token của bạn
             MODEL_ID: "gemini-2.5-flash",
             HISTORY_LIMIT: 100
         };
 
         let state = {
             apiKey: localStorage.getItem('gpt_key') || "",
-            // Logic: Ưu tiên token đã lưu, nếu không có thì lấy từ ENV
+            // Logic: Nếu có trong localStorage thì dùng, không thì dùng ENV
             ghToken: localStorage.getItem('gh_token') || ENV.GH_TOKEN,
             ghOwner: localStorage.getItem('gh_owner') || "",
             ghRepo: localStorage.getItem('gh_repo') || "",
@@ -239,13 +235,8 @@
         const fileInput = document.getElementById('fileInput');
         let imgBase64 = null;
 
-        // Init
         marked.setOptions({ breaks: true, highlight: (code) => hljs.highlightAuto(code).value });
-        
-        // Điền token vào ô cài đặt ngay khi load
-        document.addEventListener('DOMContentLoaded', () => { 
-            document.getElementById('ghToken').value = state.ghToken; 
-        });
+        document.addEventListener('DOMContentLoaded', () => { document.getElementById('ghToken').value = state.ghToken; });
 
         // === GITHUB SERVICE ===
         const GitHub = {
@@ -258,7 +249,7 @@
                         headers: { 'Authorization': `token ${state.ghToken}`, 'Accept': 'application/vnd.github.v3+json' }
                     });
                     if(res.status === 404) return { status: 404 };
-                    if(!res.ok) throw new Error("Lỗi kết nối GitHub");
+                    if(!res.ok) throw new Error("Lỗi kết nối GitHub (Check Owner/Repo)");
                     const data = await res.json();
                     return { status: 200, sha: data.sha, content: JSON.parse(this.b64_to_utf8(data.content)) };
                 } catch (e) { return { error: e.message }; }
@@ -280,14 +271,17 @@
             const err = document.getElementById('login-error');
             const spin = document.getElementById('login-spinner');
             
-            if(!name) return err.innerText = "Nhập tên đi bạn!";
-            if(!state.ghOwner || !state.ghRepo) return err.innerText = "Chưa cấu hình Repo!";
+            if(!name) return err.innerText = "Vui lòng nhập tên!";
+            if(!state.ghOwner || !state.ghRepo) return err.innerText = "Chưa cấu hình GitHub Repo!";
 
             spin.style.display = 'block'; err.innerText = "";
             const res = await GitHub.getFile(`${name}.json`);
             spin.style.display = 'none';
 
-            if(res.error) { alert(res.error); return toggleSettings(); }
+            if(res.error) { 
+                alert("Lỗi: " + res.error + "\nHãy vào Cấu hình kiểm tra lại Tên User Github và Repo.");
+                return toggleSettings();
+            }
 
             document.getElementById('btnCheckUser').classList.add('hidden');
             document.getElementById('btnLoginAction').classList.remove('hidden');
@@ -322,7 +316,7 @@
                     state.currentSha = check.sha;
                     state.history = [];
                     loginSuccess(name);
-                } catch(e) { err.innerText = "Lỗi tạo file GitHub"; }
+                } catch(e) { err.innerText = "Lỗi tạo file GitHub. Kiểm tra quyền Token."; }
             } else {
                 if(state.serverData.password === pass) {
                     state.history = state.serverData.history || [];
@@ -336,7 +330,7 @@
             document.getElementById('login-modal').classList.add('hidden');
             document.getElementById('username-text').innerText = name;
             renderHistory();
-            if(state.history.length === 0) appendMsg('ai', `Chào mừng **${name}**! Tôi là DatGPT 2.5 với khả năng Nhìn, Nghe, Tìm kiếm và Lưu trữ.`);
+            if(state.history.length === 0) appendMsg('ai', `Chào mừng **${name}**! Đã kết nối Cloud.`);
         }
 
         // === CORE CHAT ===
@@ -367,11 +361,8 @@
             else sys += `Trả lời ngắn gọn, hữu ích. `;
             if(state.isWeb) sys += `[WEB SEARCH]: Dùng Google Search tìm thông tin mới nhất. `;
 
-            // Construct History for API
-            let apiHistory = state.history.map(h => ({
-                role: h.role,
-                parts: h.parts
-            }));
+            // API History
+            let apiHistory = state.history.map(h => ({ role: h.role, parts: h.parts }));
 
             let payload = {
                 contents: [
@@ -403,27 +394,19 @@
                 document.getElementById(loadId).innerHTML = marked.parse(reply) + sources;
                 document.getElementById(loadId).querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
 
-                // Save History & Cloud
+                // Save
                 state.history.push(
                     { role: 'user', parts: [{ text: text || 'Sent an image' }] },
                     { role: 'model', parts: [{ text: reply }] }
                 );
                 
-                // Limit History
+                // Limit History 100
                 if(state.history.length > ENV.HISTORY_LIMIT) state.history = state.history.slice(-ENV.HISTORY_LIMIT);
                 
                 saveToCloud();
                 speak(reply);
 
             } catch(e) { document.getElementById(loadId).innerText = "Lỗi: " + e.message; }
-        }
-
-        async function saveToCloud() {
-            if(!state.currentUser) return;
-            const data = { password: state.serverData.password, history: state.history };
-            await GitHub.saveFile(`${state.currentUser}.json`, data, state.currentSha);
-            const updated = await GitHub.getFile(`${state.currentUser}.json`);
-            if(updated.sha) state.currentSha = updated.sha;
         }
 
         // === UI HELPERS ===
@@ -443,24 +426,34 @@
             state.history.forEach(h => addMsg(h.role==='model'?'ai':'user', h.parts[0].text, false));
         }
         function autoResize(el) { el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
-        function toggleSettings() { document.getElementById('settings-modal').classList.toggle('hidden'); if(!document.getElementById('settings-modal').classList.contains('hidden')) { document.getElementById('cfgKey').value=state.apiKey; document.getElementById('ghOwner').value=state.ghOwner; document.getElementById('ghRepo').value=state.ghRepo; } }
+        
+        function toggleSettings() { 
+            const m = document.getElementById('settings-modal'); 
+            m.classList.toggle('hidden'); 
+            if(!m.classList.contains('hidden')) { 
+                document.getElementById('cfgKey').value=state.apiKey; 
+                document.getElementById('ghOwner').value=state.ghOwner; 
+                document.getElementById('ghRepo').value=state.ghRepo; 
+            } 
+        }
+        
         function saveSettings() {
             state.apiKey = document.getElementById('cfgKey').value.trim();
-            // Nếu người dùng xóa trống token, nó sẽ tự quay về mặc định
-            const inputToken = document.getElementById('ghToken').value.trim();
-            state.ghToken = inputToken || ENV.GH_TOKEN;
+            // Nếu xóa trống thì lấy mặc định
+            const tk = document.getElementById('ghToken').value.trim();
+            state.ghToken = tk || ENV.GH_TOKEN;
             
             state.ghOwner = document.getElementById('ghOwner').value.trim();
             state.ghRepo = document.getElementById('ghRepo').value.trim();
 
-            localStorage.setItem('gpt_key', state.apiKey);
+            localStorage.setItem('gpt_key', state.apiKey); 
             localStorage.setItem('gh_token', state.ghToken);
-            localStorage.setItem('gh_owner', state.ghOwner);
+            localStorage.setItem('gh_owner', state.ghOwner); 
             localStorage.setItem('gh_repo', state.ghRepo);
             
-            toggleSettings();
-            alert("Đã lưu!");
+            toggleSettings(); alert("Đã lưu!");
         }
+        
         function clearChat() { chatArea.innerHTML = ''; state.history = []; saveToCloud(); }
         function exportChat() { const b = new Blob([JSON.stringify(state.history,null,2)],{type:'application/json'}); const a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download='chat.json'; a.click(); }
 
