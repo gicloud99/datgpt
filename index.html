@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DatGPT 3.0 - Cloud Cloud</title>
+    <title>DatGPT 3.6 - Env Config</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
@@ -14,100 +14,175 @@
 
         :root {
             --bg-body: #09090b; --bg-panel: #18181b; --border: #27272a;
-            --primary: #10a37f; --text-main: #e4e4e7;
+            --primary: #10a37f; --primary-hover: #0d8a6b;
+            --text-main: #e4e4e7; --text-sub: #a1a1aa;
+            --color-research: #8b5cf6; --color-web: #3b82f6;
         }
+
         * { box-sizing: border-box; outline: none; }
-        body { margin: 0; background: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; height: 100dvh; overflow: hidden; font-size: 15px; }
+        body { margin: 0; background: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; font-size: 15px; }
         
-        /* Layout */
+        /* ICON SVG */
+        svg { width: 20px; height: 20px; stroke-width: 1.5; }
+        .icon-sm { width: 16px; height: 16px; }
+
         #app-container { display: flex; flex-direction: column; height: 100%; max-width: 1200px; margin: 0 auto; position: relative; }
-        header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .app-name { font-weight: 600; font-size: 16px; color: #fff; display: flex; align-items: center; gap: 10px; }
-        .user-info { font-size: 12px; color: #888; background: #222; padding: 4px 8px; border-radius: 4px; }
 
-        /* Chat Area */
+        /* HEADER */
+        header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg-body); }
+        .app-branding { display: flex; align-items: center; gap: 10px; }
+        .status-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 10px var(--primary); }
+        .app-name { font-weight: 600; font-size: 16px; }
+        .user-info { font-size: 12px; background: #27272a; padding: 4px 10px; border-radius: 12px; color: #aaa; border: 1px solid #333; display: flex; align-items: center; gap: 5px; }
+
+        /* CHAT AREA */
         #chat-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
-        .msg-row { display: flex; width: 100%; gap: 10px; }
+        .msg-row { display: flex; gap: 15px; width: 100%; }
         .msg-row.user { justify-content: flex-end; }
-        .msg-content { max-width: 800px; padding: 10px 15px; border-radius: 12px; line-height: 1.6; font-size: 15px; word-wrap: break-word; }
-        .msg-row.user .msg-content { background: #27272a; color: #fff; }
-        .msg-row.ai .msg-content { background: transparent; padding: 0; width: 100%; }
         
-        pre { background: #18181b !important; padding: 15px; border-radius: 8px; overflow-x: auto; margin: 10px 0; border: 1px solid #333; }
-        code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
-        img { max-width: 100%; border-radius: 8px; margin-top: 5px; }
+        .avatar { width: 32px; height: 32px; border-radius: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .avatar.ai { background: #10a37f; }
+        
+        .msg-content { max-width: 800px; line-height: 1.6; font-size: 15px; }
+        .msg-row.user .msg-content { background: #27272a; padding: 10px 15px; border-radius: 12px; color: #fff; }
+        .msg-row.ai .msg-content { background: transparent; padding: 0; width: 100%; }
 
-        /* Input Area */
-        .input-container { padding: 20px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
-        .input-box { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px; display: flex; align-items: flex-end; gap: 10px; }
+        /* Sources (Web Search) */
+        .sources-container { margin-top: 15px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .source-chip { background: #1e1e24; border: 1px solid #333; padding: 6px 10px; border-radius: 6px; font-size: 12px; color: #aaa; text-decoration: none; display: flex; gap: 5px; transition: 0.2s; }
+        .source-chip:hover { border-color: var(--color-web); color: #fff; }
+
+        pre { background: #18181b !important; padding: 15px; border-radius: 8px; overflow-x: auto; margin: 15px 0; border: 1px solid #333; }
+        code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+        img { max-width: 100%; max-height: 400px; border-radius: 8px; margin-top: 10px; border: 1px solid #333; }
+
+        /* INPUT AREA */
+        .input-container { padding: 20px; background: var(--bg-body); display: flex; flex-direction: column; gap: 12px; }
+        
+        .tools-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; align-items: center; }
+        .tools-row::-webkit-scrollbar { display: none; }
+
+        .btn-pill { background: #18181b; border: 1px solid #333; color: var(--text-sub); padding: 6px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; user-select: none; }
+        .btn-pill:hover { background: #27272a; color: #fff; }
+        .btn-pill.active-deep { background: rgba(139, 92, 246, 0.15); border-color: var(--color-research); color: var(--color-research); }
+        .btn-pill.active-web { background: rgba(59, 130, 246, 0.15); border-color: var(--color-web); color: var(--color-web); }
+        .btn-pill.action-red:hover { color: #ef4444; border-color: #ef4444; }
+
+        .input-box { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px; display: flex; align-items: flex-end; gap: 8px; transition: 0.2s; }
+        .input-box:focus-within { border-color: #555; }
+
         textarea { flex: 1; background: transparent; border: none; color: #fff; padding: 10px 0; resize: none; height: 44px; max-height: 150px; font-family: inherit; font-size: 15px; }
-        button { width: 36px; height: 36px; border-radius: 8px; border: none; cursor: pointer; background: transparent; color: #888; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
-        button:hover { background: #333; color: #fff; }
-        .btn-send { background: var(--primary) !important; color: #fff !important; }
+        
+        .btn-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: transparent; border: none; color: #888; transition: 0.2s; flex-shrink: 0; }
+        .btn-icon:hover { background: #27272a; color: #fff; }
+        .btn-send { background: var(--primary); color: #fff; }
+        .btn-send:hover { background: var(--primary-hover); }
+        .btn-mic.listening { color: #ef4444; background: rgba(239, 68, 68, 0.1); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        /* Preview */
+        .preview-box { display: none; margin-left: 10px; position: relative; }
+        .preview-box img { height: 40px; border-radius: 4px; border: 1px solid #444; }
+        .preview-box .btn-close { position: absolute; top: -5px; right: -5px; width: 16px; height: 16px; background: #333; border-radius: 50%; color: #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #555; }
 
         /* Login Modal & Settings */
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); z-index: 2000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .modal-box { background: #18181b; width: 400px; padding: 30px; border-radius: 16px; border: 1px solid #333; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .modal-title { margin-top: 0; color: #fff; text-align: center; }
+        .modal-title { margin-top: 0; color: #fff; text-align: center; margin-bottom: 20px; }
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; color: #aaa; font-size: 13px; margin-bottom: 5px; }
-        .input-group input { width: 100%; padding: 12px; background: #27272a; border: 1px solid #333; color: white; border-radius: 8px; outline: none; transition: 0.2s; }
-        .input-group input:focus { border-color: var(--primary); }
+        .input-group input { width: 100%; padding: 12px; background: #27272a; border: 1px solid #333; color: white; border-radius: 8px; outline: none; }
         .btn-primary { width: 100%; background: var(--primary); color: white; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        
         .hidden { display: none !important; }
         .error-msg { color: #ef4444; font-size: 13px; text-align: center; margin-top: 10px; min-height: 20px; }
         .loading-spinner { border: 3px solid #333; border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 0 auto; display: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        @media screen and (max-width: 768px) {
+            .btn-pill span { display: none; } /* Mobile: Ẩn chữ nút */
+            .input-container { padding: 15px 10px; }
+        }
     </style>
 </head>
 <body>
 
     <div id="login-modal" class="modal-overlay">
         <div class="modal-box">
-            <h2 class="modal-title">Đăng nhập / Đăng ký</h2>
-            <p style="color:#666; text-align:center; font-size:13px; margin-bottom:20px;">Dữ liệu sẽ được lưu trên GitHub</p>
-            
+            <h2 class="modal-title">Đăng nhập Cloud</h2>
             <div class="input-group">
                 <label>Tên đăng nhập (ID):</label>
-                <input type="text" id="loginName" placeholder="Ví dụ: datnguyen123">
+                <input type="text" id="loginName" placeholder="Ví dụ: datnguyen">
             </div>
-            
             <div id="password-section" class="input-group hidden">
                 <label id="pass-label">Mật khẩu:</label>
                 <input type="password" id="loginPass" placeholder="Nhập mật khẩu...">
             </div>
-
             <div class="loading-spinner" id="login-spinner"></div>
             <div class="error-msg" id="login-error"></div>
-
-            <button class="btn-primary" id="btnCheckUser" onclick="checkUser()">Kiểm tra Tên</button>
+            <button class="btn-primary" id="btnCheckUser" onclick="checkUser()">Tiếp tục</button>
             <button class="btn-primary hidden" id="btnLoginAction" onclick="performLogin()">Xác nhận</button>
-            
-            <div style="margin-top:20px; border-top:1px solid #333; padding-top:10px;">
-                <button onclick="toggleSettings()" style="width:100%; font-size:12px; color:#666; height:auto;">Cấu hình GitHub Token</button>
+            <div style="margin-top:15px; text-align:center;">
+                <button onclick="toggleSettings()" style="background:none; border:none; color:#666; font-size:12px; cursor:pointer; text-decoration:underline;">Cấu hình nâng cao</button>
             </div>
         </div>
     </div>
 
     <div id="app-container">
         <header>
-            <div class="app-name">
-                <span style="width:10px;height:10px;background:#10a37f;border-radius:50%"></span>
-                DatGPT 3.0 Cloud
+            <div class="app-branding">
+                <span class="status-dot"></span>
+                <span class="app-name">DatGPT</span>
             </div>
-            <div class="user-info" id="display-user">Chưa đăng nhập</div>
+            <div class="user-info" id="display-user">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:14px;height:14px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <span id="username-text">Khách</span>
+            </div>
         </header>
 
         <div id="chat-area"></div>
 
         <div class="input-container">
+            <div class="tools-row">
+                <div class="btn-pill" id="btnWeb" onclick="toggleMode('web')">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    <span>Web Search</span>
+                </div>
+                <div class="btn-pill" id="btnDeep" onclick="toggleMode('deep')">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                    <span>Deep Research</span>
+                </div>
+                <div style="flex:1"></div> 
+                <div class="btn-pill action-red" onclick="clearChat()" title="Xóa Chat">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </div>
+                <div class="btn-pill" onclick="exportChat()" title="Lưu máy">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v13a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline></svg>
+                </div>
+            </div>
+
             <div class="input-box">
                 <input type="file" id="fileInput" accept="image/*" style="display:none">
-                <button onclick="document.getElementById('fileInput').click()">🖼️</button>
-                <textarea id="userInput" placeholder="Nhập tin nhắn..." rows="1"></textarea>
-                <button class="btn-send" id="btnSend">➤</button>
+                
+                <div class="preview-box" id="preview-box">
+                    <img id="preview-img" src="">
+                    <div class="btn-close" onclick="removeImg()">×</div>
+                </div>
+
+                <button class="btn-icon" onclick="document.getElementById('fileInput').click()" title="Tải ảnh">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                </button>
+                <button class="btn-icon" id="btnLive" title="Live Mode">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
+                </button>
+                <button class="btn-icon btn-mic" id="btnMic" title="Voice">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                </button>
+
+                <textarea id="userInput" placeholder="Nhập tin nhắn..." rows="1" oninput="autoResize(this)"></textarea>
+
+                <button class="btn-icon btn-send" id="btnSend">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
             </div>
         </div>
     </div>
@@ -120,121 +195,109 @@
                 <input type="password" id="cfgKey">
             </div>
             <div class="input-group">
-                <label>GitHub Token (Repo scope):</label>
+                <label>GitHub Token (Có sẵn):</label>
                 <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
             </div>
             <div class="input-group">
-                <label>GitHub Username (Owner):</label>
+                <label>GitHub Owner (User):</label>
                 <input type="text" id="ghOwner" placeholder="Tên user github của bạn">
             </div>
             <div class="input-group">
                 <label>Repo Name:</label>
                 <input type="text" id="ghRepo" placeholder="Tên repo (vd: chat-data)">
             </div>
-            <button class="btn-primary" onclick="saveSettings()">Lưu Cấu Hình</button>
-            <button onclick="toggleSettings()" style="width:100%; margin-top:10px; color:#888;">Đóng</button>
+            <button class="btn-primary" onclick="saveSettings()">Lưu & Đóng</button>
+            <button onclick="toggleSettings()" style="width:100%; background:transparent; color:#888; border:none; margin-top:10px; cursor:pointer;">Hủy</button>
         </div>
     </div>
 
     <script>
-        // === CONFIGURATION ===
-        const CONFIG = {
-            modelId: "gemini-2.5-flash",
-            historyLimit: 100 // Giới hạn 100 tin nhắn
+        // === ENV CONFIGURATION ===
+        // Token mặc định bạn đã cung cấp
+        const ENV = {
+            GH_TOKEN: "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",
+            MODEL_ID: "gemini-2.5-flash",
+            HISTORY_LIMIT: 100
         };
 
         let state = {
             apiKey: localStorage.getItem('gpt_key') || "",
-            ghToken: localStorage.getItem('gh_token') || "",
+            // Logic: Ưu tiên token đã lưu, nếu không có thì lấy từ ENV
+            ghToken: localStorage.getItem('gh_token') || ENV.GH_TOKEN,
             ghOwner: localStorage.getItem('gh_owner') || "",
             ghRepo: localStorage.getItem('gh_repo') || "",
             
             currentUser: null,
-            currentSha: null, // SHA của file json trên github (để update)
-            history: []
+            currentSha: null,
+            history: [],
+            isWeb: false, isDeep: false, isLive: false, aiSpeaking: false
         };
+
+        // DOM
+        const chatArea = document.getElementById('chat-area');
+        const userInput = document.getElementById('userInput');
+        const fileInput = document.getElementById('fileInput');
+        let imgBase64 = null;
+
+        // Init
+        marked.setOptions({ breaks: true, highlight: (code) => hljs.highlightAuto(code).value });
+        
+        // Điền token vào ô cài đặt ngay khi load
+        document.addEventListener('DOMContentLoaded', () => { 
+            document.getElementById('ghToken').value = state.ghToken; 
+        });
 
         // === GITHUB SERVICE ===
         const GitHub = {
-            // Helper để encode/decode Unicode sang Base64
             utf8_to_b64: (str) => window.btoa(unescape(encodeURIComponent(str))),
             b64_to_utf8: (str) => decodeURIComponent(escape(window.atob(str))),
-
             async getFile(filename) {
-                if(!state.ghToken) return { error: "Chưa có GitHub Token" };
-                const url = `https://api.github.com/repos/${state.ghOwner}/${state.ghRepo}/contents/users/${filename}`;
-                
+                if(!state.ghToken) return { error: "Thiếu Token" };
                 try {
-                    const res = await fetch(url, {
-                        headers: { 
-                            'Authorization': `token ${state.ghToken}`,
-                            'Accept': 'application/vnd.github.v3+json'
-                        }
+                    const res = await fetch(`https://api.github.com/repos/${state.ghOwner}/${state.ghRepo}/contents/users/${filename}`, {
+                        headers: { 'Authorization': `token ${state.ghToken}`, 'Accept': 'application/vnd.github.v3+json' }
                     });
-                    if(res.status === 404) return { status: 404 }; // Chưa có file
+                    if(res.status === 404) return { status: 404 };
                     if(!res.ok) throw new Error("Lỗi kết nối GitHub");
-                    
                     const data = await res.json();
-                    const content = JSON.parse(this.b64_to_utf8(data.content));
-                    return { status: 200, sha: data.sha, content: content };
-                } catch (e) {
-                    return { error: e.message };
-                }
+                    return { status: 200, sha: data.sha, content: JSON.parse(this.b64_to_utf8(data.content)) };
+                } catch (e) { return { error: e.message }; }
             },
-
             async saveFile(filename, content, sha = null) {
-                const url = `https://api.github.com/repos/${state.ghOwner}/${state.ghRepo}/contents/users/${filename}`;
-                const body = {
-                    message: "Update chat history",
-                    content: this.utf8_to_b64(JSON.stringify(content, null, 2))
-                };
+                const body = { message: "Sync chat", content: this.utf8_to_b64(JSON.stringify(content, null, 2)) };
                 if(sha) body.sha = sha;
-
-                await fetch(url, {
+                await fetch(`https://api.github.com/repos/${state.ghOwner}/${state.ghRepo}/contents/users/${filename}`, {
                     method: 'PUT',
-                    headers: { 
-                        'Authorization': `token ${state.ghToken}`,
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Authorization': `token ${state.ghToken}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
             }
         };
 
-        // === APP LOGIC ===
-        
-        // 1. Kiểm tra User khi đăng nhập
+        // === LOGIN LOGIC ===
         async function checkUser() {
             const name = document.getElementById('loginName').value.trim();
-            const errorDiv = document.getElementById('login-error');
-            const spinner = document.getElementById('login-spinner');
+            const err = document.getElementById('login-error');
+            const spin = document.getElementById('login-spinner');
             
-            if(!name) return errorDiv.innerText = "Vui lòng nhập tên!";
-            if(!state.ghToken) return errorDiv.innerText = "Vui lòng cấu hình GitHub Token trước!";
+            if(!name) return err.innerText = "Nhập tên đi bạn!";
+            if(!state.ghOwner || !state.ghRepo) return err.innerText = "Chưa cấu hình Repo!";
 
-            spinner.style.display = 'block';
-            errorDiv.innerText = "";
-            
+            spin.style.display = 'block'; err.innerText = "";
             const res = await GitHub.getFile(`${name}.json`);
-            spinner.style.display = 'none';
+            spin.style.display = 'none';
 
-            if(res.error) {
-                alert("Lỗi: " + res.error + ". Hãy kiểm tra cấu hình.");
-                return toggleSettings();
-            }
+            if(res.error) { alert(res.error); return toggleSettings(); }
 
-            // Hiển thị phần nhập pass
             document.getElementById('btnCheckUser').classList.add('hidden');
             document.getElementById('btnLoginAction').classList.remove('hidden');
             document.getElementById('password-section').classList.remove('hidden');
             document.getElementById('loginName').disabled = true;
 
             if(res.status === 404) {
-                // User mới
                 document.getElementById('pass-label').innerText = "Tạo mật khẩu mới:";
                 state.isNewUser = true;
             } else {
-                // User cũ
                 document.getElementById('pass-label').innerText = "Nhập mật khẩu:";
                 state.isNewUser = false;
                 state.serverData = res.content;
@@ -242,152 +305,151 @@
             }
         }
 
-        // 2. Xử lý Đăng nhập / Đăng ký
         async function performLogin() {
             const name = document.getElementById('loginName').value.trim();
             const pass = document.getElementById('loginPass').value.trim();
-            const spinner = document.getElementById('login-spinner');
-            const errorDiv = document.getElementById('login-error');
+            const spin = document.getElementById('login-spinner');
+            const err = document.getElementById('login-error');
 
-            if(!pass) return errorDiv.innerText = "Vui lòng nhập mật khẩu!";
-            spinner.style.display = 'block';
+            if(!pass) return err.innerText = "Chưa nhập mật khẩu!";
+            spin.style.display = 'block';
 
             if(state.isNewUser) {
-                // Đăng ký: Tạo file mới
                 const newData = { password: pass, history: [] };
                 try {
                     await GitHub.saveFile(`${name}.json`, newData);
-                    // Lấy lại SHA sau khi tạo
                     const check = await GitHub.getFile(`${name}.json`);
                     state.currentSha = check.sha;
                     state.history = [];
                     loginSuccess(name);
-                } catch(e) {
-                    errorDiv.innerText = "Không thể tạo file trên GitHub.";
-                }
+                } catch(e) { err.innerText = "Lỗi tạo file GitHub"; }
             } else {
-                // Đăng nhập: Check pass
                 if(state.serverData.password === pass) {
                     state.history = state.serverData.history || [];
                     loginSuccess(name);
-                } else {
-                    spinner.style.display = 'none';
-                    errorDiv.innerText = "Sai mật khẩu!";
-                }
+                } else { spin.style.display = 'none'; err.innerText = "Sai mật khẩu!"; }
             }
         }
 
         function loginSuccess(name) {
             state.currentUser = name;
             document.getElementById('login-modal').classList.add('hidden');
-            document.getElementById('display-user').innerText = `User: ${name}`;
+            document.getElementById('username-text').innerText = name;
             renderHistory();
+            if(state.history.length === 0) appendMsg('ai', `Chào mừng **${name}**! Tôi là DatGPT 2.5 với khả năng Nhìn, Nghe, Tìm kiếm và Lưu trữ.`);
         }
 
-        // 3. Render Lịch sử chat
-        function renderHistory() {
-            const chatArea = document.getElementById('chat-area');
-            chatArea.innerHTML = '';
-            state.history.forEach(msg => {
-                const div = document.createElement('div');
-                div.className = `msg-row ${msg.role}`;
-                div.innerHTML = `<div class="msg-content">${marked.parse(msg.parts[0].text)}</div>`;
-                chatArea.appendChild(div);
-            });
-            chatArea.scrollTop = chatArea.scrollHeight;
+        // === CORE CHAT ===
+        function toggleMode(mode) {
+            if (mode === 'web') { state.isWeb = !state.isWeb; document.getElementById('btnWeb').classList.toggle('active-web', state.isWeb); }
+            if (mode === 'deep') { state.isDeep = !state.isDeep; document.getElementById('btnDeep').classList.toggle('active-deep', state.isDeep); }
         }
 
-        // 4. Gửi tin nhắn & Lưu Cloud
         async function sendMsg() {
-            const input = document.getElementById('userInput');
-            const text = input.value.trim();
-            if(!text) return;
-            if(!state.apiKey) return alert("Thiếu Gemini API Key!");
+            const text = userInput.value.trim();
+            if(!text && !imgBase64) return;
+            if(!state.apiKey) return toggleSettings();
 
-            // UI
-            input.value = '';
-            appendMsg('user', text);
+            addMsg('user', text || '[Ảnh]', !!imgBase64);
+            if(imgBase64) addMsg('user', `<img src="data:image/png;base64,${imgBase64}">`, true);
             
-            // Logic
-            const payload = {
-                contents: [
-                    ...state.history.map(h => ({ role: h.role, parts: h.parts })),
-                    { role: 'user', parts: [{ text: text }] }
-                ]
-            };
+            userInput.value = ''; userInput.style.height = '44px';
+            removeImg();
 
-            const loadingId = appendMsg('ai', '...');
+            let status = '...';
+            if(state.isWeb) status = '🌏 Đang tìm Google...';
+            if(state.isDeep) status = '🧠 Đang suy luận sâu...';
+            const loadId = appendMsg('ai', status);
+
+            // Construct Prompt
+            let sys = `Bạn là DatGPT 2.5. Tên User: ${state.currentUser || 'Bạn'}. `;
+            if(state.isDeep) sys += `[DEEP RESEARCH]: Phân tích chi tiết, sâu sắc, có cấu trúc. `;
+            else sys += `Trả lời ngắn gọn, hữu ích. `;
+            if(state.isWeb) sys += `[WEB SEARCH]: Dùng Google Search tìm thông tin mới nhất. `;
+
+            // Construct History for API
+            let apiHistory = state.history.map(h => ({
+                role: h.role,
+                parts: h.parts
+            }));
+
+            let payload = {
+                contents: [
+                    ...apiHistory,
+                    { role: 'user', parts: imgBase64 ? [{ inlineData: { mimeType: "image/png", data: imgBase64 }}, { text }] : [{ text }] }
+                ],
+                systemInstruction: { parts: [{ text: sys }] }
+            };
+            if(state.isWeb) payload.tools = [{ google_search: {} }];
 
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.modelId}:generateContent?key=${state.apiKey}`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(payload)
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${ENV.MODEL_ID}:generateContent?key=${state.apiKey}`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
                 });
                 const data = await res.json();
-                const reply = data.candidates[0].content.parts[0].text;
+                if(data.error) throw new Error(data.error.message);
 
-                // Xóa loading, hiện kết quả
-                document.getElementById(loadingId).innerHTML = marked.parse(reply);
-
-                // Cập nhật State
-                state.history.push(
-                    { role: 'user', parts: [{ text: text }] },
-                    { role: 'model', parts: [{ text: reply }] }
-                );
-
-                // GIỚI HẠN 100 TIN
-                if(state.history.length > CONFIG.historyLimit) {
-                    state.history = state.history.slice(state.history.length - CONFIG.historyLimit);
+                const candidate = data.candidates[0];
+                let reply = candidate.content.parts[0].text;
+                
+                // Grounding Sources
+                let sources = '';
+                if(candidate.groundingMetadata?.groundingChunks) {
+                    sources = `<div class="sources-container">` + 
+                    candidate.groundingMetadata.groundingChunks.map(c => c.web?.uri ? `<a href="${c.web.uri}" target="_blank" class="source-chip">🔗 <span>${c.web.title||'Link'}</span></a>` : '').join('') 
+                    + `</div>`;
                 }
 
-                // LƯU LÊN GITHUB (Background save)
-                saveToCloud();
+                document.getElementById(loadId).innerHTML = marked.parse(reply) + sources;
+                document.getElementById(loadId).querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
 
-            } catch(e) {
-                document.getElementById(loadingId).innerText = "Lỗi: " + e.message;
-            }
+                // Save History & Cloud
+                state.history.push(
+                    { role: 'user', parts: [{ text: text || 'Sent an image' }] },
+                    { role: 'model', parts: [{ text: reply }] }
+                );
+                
+                // Limit History
+                if(state.history.length > ENV.HISTORY_LIMIT) state.history = state.history.slice(-ENV.HISTORY_LIMIT);
+                
+                saveToCloud();
+                speak(reply);
+
+            } catch(e) { document.getElementById(loadId).innerText = "Lỗi: " + e.message; }
         }
 
         async function saveToCloud() {
             if(!state.currentUser) return;
-            const dataToSave = {
-                password: state.serverData ? state.serverData.password : document.getElementById('loginPass').value,
-                history: state.history
-            };
-            // Lưu và cập nhật lại SHA mới để lần sau không lỗi
-            await GitHub.saveFile(`${state.currentUser}.json`, dataToSave, state.currentSha);
-            // Lấy lại SHA mới nhất (Best practice để tránh conflict)
+            const data = { password: state.serverData.password, history: state.history };
+            await GitHub.saveFile(`${state.currentUser}.json`, data, state.currentSha);
             const updated = await GitHub.getFile(`${state.currentUser}.json`);
             if(updated.sha) state.currentSha = updated.sha;
         }
 
+        // === UI HELPERS ===
+        function addMsg(role, text, isHtml) {
+            const div = document.createElement('div'); div.className = `msg-row ${role}`;
+            div.innerHTML = `<div class="avatar ${role}">${role==='ai'?'🤖':''}</div><div class="msg-content">${isHtml ? text : marked.parse(text)}</div>`;
+            chatArea.appendChild(div); chatArea.scrollTop = chatArea.scrollHeight;
+        }
         function appendMsg(role, text) {
-            const id = 'msg-' + Date.now();
-            const chatArea = document.getElementById('chat-area');
-            const div = document.createElement('div');
-            div.className = `msg-row ${role === 'user' ? 'user' : 'ai'}`;
-            div.innerHTML = `<div class="msg-content" id="${id}">${role==='ai' && text==='...' ? '...' : marked.parse(text)}</div>`;
-            chatArea.appendChild(div);
-            chatArea.scrollTop = chatArea.scrollHeight;
-            return id;
+            const id = 'msg-'+Date.now();
+            const div = document.createElement('div'); div.className = `msg-row ${role}`;
+            div.innerHTML = `<div class="avatar ${role}">${role==='ai'?'🤖':''}</div><div class="msg-content" id="${id}">${text}</div>`;
+            chatArea.appendChild(div); chatArea.scrollTop = chatArea.scrollHeight; return id;
         }
-
-        // Settings Logic
-        function toggleSettings() {
-            const m = document.getElementById('settings-modal');
-            m.classList.toggle('hidden');
-            if(!m.classList.contains('hidden')) {
-                document.getElementById('cfgKey').value = state.apiKey;
-                document.getElementById('ghToken').value = state.ghToken;
-                document.getElementById('ghOwner').value = state.ghOwner;
-                document.getElementById('ghRepo').value = state.ghRepo;
-            }
+        function renderHistory() {
+            chatArea.innerHTML = '';
+            state.history.forEach(h => addMsg(h.role==='model'?'ai':'user', h.parts[0].text, false));
         }
-
+        function autoResize(el) { el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
+        function toggleSettings() { document.getElementById('settings-modal').classList.toggle('hidden'); if(!document.getElementById('settings-modal').classList.contains('hidden')) { document.getElementById('cfgKey').value=state.apiKey; document.getElementById('ghOwner').value=state.ghOwner; document.getElementById('ghRepo').value=state.ghRepo; } }
         function saveSettings() {
             state.apiKey = document.getElementById('cfgKey').value.trim();
-            state.ghToken = document.getElementById('ghToken').value.trim();
+            // Nếu người dùng xóa trống token, nó sẽ tự quay về mặc định
+            const inputToken = document.getElementById('ghToken').value.trim();
+            state.ghToken = inputToken || ENV.GH_TOKEN;
+            
             state.ghOwner = document.getElementById('ghOwner').value.trim();
             state.ghRepo = document.getElementById('ghRepo').value.trim();
 
@@ -397,10 +459,35 @@
             localStorage.setItem('gh_repo', state.ghRepo);
             
             toggleSettings();
-            alert("Đã lưu cấu hình! Hãy thử đăng nhập lại.");
+            alert("Đã lưu!");
         }
+        function clearChat() { chatArea.innerHTML = ''; state.history = []; saveToCloud(); }
+        function exportChat() { const b = new Blob([JSON.stringify(state.history,null,2)],{type:'application/json'}); const a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download='chat.json'; a.click(); }
 
+        // File & Voice
+        fileInput.addEventListener('change', e => {
+            const f = e.target.files[0]; if(!f) return;
+            const r = new FileReader(); r.onload = v => { imgBase64 = v.target.result.split(',')[1]; document.getElementById('preview-img').src=v.target.result; document.getElementById('preview-box').style.display='block'; }; r.readAsDataURL(f); fileInput.value='';
+        });
+        function removeImg() { imgBase64=null; document.getElementById('preview-box').style.display='none'; }
         document.getElementById('btnSend').onclick = sendMsg;
+        userInput.addEventListener('keypress', e => { if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }});
+
+        // Speech
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        if(SpeechRecognition) {
+            recognition = new SpeechRecognition(); recognition.lang='vi-VN'; recognition.continuous=false;
+            recognition.onstart = () => { document.getElementById('btnMic').classList.add('listening'); if(state.isLive) document.getElementById('btnLive').style.color='#ef4444'; };
+            recognition.onend = () => { document.getElementById('btnMic').classList.remove('listening'); if(state.isLive && !state.aiSpeaking) setTimeout(()=>recognition.start(), 500); };
+            recognition.onresult = e => { const t = e.results[0][0].transcript; if(state.isLive){ userInput.value=t; sendMsg(); } else { userInput.value += (userInput.value?' ':'')+t; autoResize(userInput); } };
+        }
+        document.getElementById('btnMic').onclick = () => recognition && recognition.start();
+        document.getElementById('btnLive').onclick = function() {
+            if(!recognition) return alert("Trình duyệt không hỗ trợ"); state.isLive = !state.isLive; this.style.color = state.isLive ? '#ef4444' : '#888';
+            state.isLive ? recognition.start() : (recognition.stop(), window.speechSynthesis.cancel());
+        };
+        function speak(text) { if(!state.isLive) return; window.speechSynthesis.cancel(); state.aiSpeaking = true; recognition.stop(); const u = new SpeechSynthesisUtterance(text.replace(/[*#`]/g, '').substring(0,300)); u.lang='vi-VN'; u.onend = () => { state.aiSpeaking = false; if(state.isLive) setTimeout(()=>recognition.start(), 500); }; window.speechSynthesis.speak(u); }
     </script>
 </body>
 </html>
