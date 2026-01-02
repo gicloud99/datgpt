@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DatGPT 3.7 - Auto Login</title>
+    <title>DatGPT 4.0 - Community</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
@@ -46,6 +46,7 @@
         .msg-row.user .msg-content { background: #27272a; padding: 10px 15px; border-radius: 12px; color: #fff; }
         .msg-row.ai .msg-content { background: transparent; padding: 0; width: 100%; }
 
+        /* Sources */
         .sources-container { margin-top: 15px; display: flex; gap: 8px; flex-wrap: wrap; }
         .source-chip { background: #1e1e24; border: 1px solid #333; padding: 6px 10px; border-radius: 6px; font-size: 12px; color: #aaa; text-decoration: none; display: flex; gap: 5px; transition: 0.2s; }
         .source-chip:hover { border-color: var(--color-web); color: #fff; }
@@ -119,7 +120,7 @@
             <button class="btn-primary" id="btnCheckUser" onclick="checkUser()">Tiếp tục</button>
             <button class="btn-primary hidden" id="btnLoginAction" onclick="performLogin()">Xác nhận</button>
             <div style="margin-top:15px; text-align:center;">
-                <button onclick="toggleSettings()" style="background:none; border:none; color:#666; font-size:12px; cursor:pointer; text-decoration:underline;">Cấu hình nâng cao</button>
+                <button onclick="toggleSettings()" style="background:none; border:none; color:#666; font-size:12px; cursor:pointer; text-decoration:underline;">Cấu hình API Key & Token</button>
             </div>
         </div>
     </div>
@@ -189,37 +190,32 @@
             <h3 class="modal-title">Cấu hình Hệ thống</h3>
             <div class="input-group">
                 <label>Gemini API Key:</label>
-                <input type="password" id="cfgKey">
+                <input type="password" id="cfgKey" placeholder="AI Key của bạn">
             </div>
             <div class="input-group">
-                <label>GitHub Token :</label>
-                <input type="password" id="ghToken">
+                <label>GitHub Token (Repo Scope):</label>
+                <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
             </div>
             <div class="input-group">
                 <label>GitHub Owner (User):</label>
-                <input type="text" id="ghOwner" placeholder="Tên user github của bạn">
+                <input type="text" id="ghOwner" placeholder="Ví dụ: gicloud99">
             </div>
             <div class="input-group">
                 <label>Repo Name:</label>
-                <input type="text" id="ghRepo" placeholder="Tên repo (vd: chat-data)">
+                <input type="text" id="ghRepo" placeholder="Ví dụ: datgpt">
             </div>
-            <button class="btn-primary" onclick="saveSettings()">Lưu & Đóng</button>
-            <button onclick="toggleSettings()" style="width:100%; background:transparent; color:#888; border:none; margin-top:10px; cursor:pointer;">Hủy</button>
+            <button class="btn-primary" onclick="saveSettings()">Lưu Cấu Hình</button>
+            <button onclick="toggleSettings()" style="width:100%; background:transparent; color:#888; border:none; margin-top:10px; cursor:pointer;">Đóng</button>
         </div>
     </div>
 
     <script>
-        // === ENV SECRETS (ĐIỀN SẴN) ===
-        const ENV = {
-            GH_TOKEN: "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, // Token của bạn
-            MODEL_ID: "gemini-2.5-flash",
-            HISTORY_LIMIT: 100
-        };
-
+        // === CONFIG SẠCH SẼ (NGƯỜI DÙNG TỰ NHẬP) ===
+        const CONFIG = { modelId: "gemini-2.5-flash", historyLimit: 100 };
+        
         let state = {
             apiKey: localStorage.getItem('gpt_key') || "",
-            // Logic: Nếu có trong localStorage thì dùng, không thì dùng ENV
-            ghToken: localStorage.getItem('gh_token') || ENV.GH_TOKEN,
+            ghToken: localStorage.getItem('gh_token') || "",
             ghOwner: localStorage.getItem('gh_owner') || "",
             ghRepo: localStorage.getItem('gh_repo') || "",
             
@@ -229,27 +225,26 @@
             isWeb: false, isDeep: false, isLive: false, aiSpeaking: false
         };
 
-        // DOM
         const chatArea = document.getElementById('chat-area');
         const userInput = document.getElementById('userInput');
         const fileInput = document.getElementById('fileInput');
         let imgBase64 = null;
 
         marked.setOptions({ breaks: true, highlight: (code) => hljs.highlightAuto(code).value });
-        document.addEventListener('DOMContentLoaded', () => { document.getElementById('ghToken').value = state.ghToken; });
 
         // === GITHUB SERVICE ===
         const GitHub = {
             utf8_to_b64: (str) => window.btoa(unescape(encodeURIComponent(str))),
             b64_to_utf8: (str) => decodeURIComponent(escape(window.atob(str))),
             async getFile(filename) {
-                if(!state.ghToken) return { error: "Thiếu Token" };
+                if(!state.ghToken) return { error: "Chưa nhập Token trong Cấu hình!" };
                 try {
                     const res = await fetch(`https://api.github.com/repos/${state.ghOwner}/${state.ghRepo}/contents/users/${filename}`, {
                         headers: { 'Authorization': `token ${state.ghToken}`, 'Accept': 'application/vnd.github.v3+json' }
                     });
                     if(res.status === 404) return { status: 404 };
-                    if(!res.ok) throw new Error("Lỗi kết nối GitHub (Check Owner/Repo)");
+                    if(res.status === 401) return { error: "Token sai hoặc hết hạn! Hãy cập nhật lại." };
+                    if(!res.ok) throw new Error("Lỗi GitHub: " + res.statusText);
                     const data = await res.json();
                     return { status: 200, sha: data.sha, content: JSON.parse(this.b64_to_utf8(data.content)) };
                 } catch (e) { return { error: e.message }; }
@@ -272,14 +267,14 @@
             const spin = document.getElementById('login-spinner');
             
             if(!name) return err.innerText = "Vui lòng nhập tên!";
-            if(!state.ghOwner || !state.ghRepo) return err.innerText = "Chưa cấu hình GitHub Repo!";
+            if(!state.ghToken || !state.ghRepo) return err.innerText = "Chưa cấu hình Token/Repo!";
 
             spin.style.display = 'block'; err.innerText = "";
             const res = await GitHub.getFile(`${name}.json`);
             spin.style.display = 'none';
 
             if(res.error) { 
-                alert("Lỗi: " + res.error + "\nHãy vào Cấu hình kiểm tra lại Tên User Github và Repo.");
+                alert(res.error); 
                 return toggleSettings();
             }
 
@@ -316,7 +311,7 @@
                     state.currentSha = check.sha;
                     state.history = [];
                     loginSuccess(name);
-                } catch(e) { err.innerText = "Lỗi tạo file GitHub. Kiểm tra quyền Token."; }
+                } catch(e) { err.innerText = "Lỗi tạo file. Token có quyền 'repo' chưa?"; }
             } else {
                 if(state.serverData.password === pass) {
                     state.history = state.serverData.history || [];
@@ -355,15 +350,12 @@
             if(state.isDeep) status = '🧠 Đang suy luận sâu...';
             const loadId = appendMsg('ai', status);
 
-            // Construct Prompt
             let sys = `Bạn là DatGPT 2.5. Tên User: ${state.currentUser || 'Bạn'}. `;
             if(state.isDeep) sys += `[DEEP RESEARCH]: Phân tích chi tiết, sâu sắc, có cấu trúc. `;
             else sys += `Trả lời ngắn gọn, hữu ích. `;
             if(state.isWeb) sys += `[WEB SEARCH]: Dùng Google Search tìm thông tin mới nhất. `;
 
-            // API History
             let apiHistory = state.history.map(h => ({ role: h.role, parts: h.parts }));
-
             let payload = {
                 contents: [
                     ...apiHistory,
@@ -374,7 +366,7 @@
             if(state.isWeb) payload.tools = [{ google_search: {} }];
 
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${ENV.MODEL_ID}:generateContent?key=${state.apiKey}`, {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.modelId}:generateContent?key=${state.apiKey}`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
                 });
                 const data = await res.json();
@@ -383,7 +375,6 @@
                 const candidate = data.candidates[0];
                 let reply = candidate.content.parts[0].text;
                 
-                // Grounding Sources
                 let sources = '';
                 if(candidate.groundingMetadata?.groundingChunks) {
                     sources = `<div class="sources-container">` + 
@@ -394,19 +385,25 @@
                 document.getElementById(loadId).innerHTML = marked.parse(reply) + sources;
                 document.getElementById(loadId).querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
 
-                // Save
                 state.history.push(
                     { role: 'user', parts: [{ text: text || 'Sent an image' }] },
                     { role: 'model', parts: [{ text: reply }] }
                 );
                 
-                // Limit History 100
-                if(state.history.length > ENV.HISTORY_LIMIT) state.history = state.history.slice(-ENV.HISTORY_LIMIT);
+                if(state.history.length > CONFIG.historyLimit) state.history = state.history.slice(-CONFIG.historyLimit);
                 
                 saveToCloud();
                 speak(reply);
 
             } catch(e) { document.getElementById(loadId).innerText = "Lỗi: " + e.message; }
+        }
+
+        async function saveToCloud() {
+            if(!state.currentUser) return;
+            const data = { password: state.serverData.password, history: state.history };
+            await GitHub.saveFile(`${state.currentUser}.json`, data, state.currentSha);
+            const updated = await GitHub.getFile(`${state.currentUser}.json`);
+            if(updated.sha) state.currentSha = updated.sha;
         }
 
         // === UI HELPERS ===
@@ -431,18 +428,16 @@
             const m = document.getElementById('settings-modal'); 
             m.classList.toggle('hidden'); 
             if(!m.classList.contains('hidden')) { 
-                document.getElementById('cfgKey').value=state.apiKey; 
-                document.getElementById('ghOwner').value=state.ghOwner; 
-                document.getElementById('ghRepo').value=state.ghRepo; 
+                document.getElementById('cfgKey').value = state.apiKey; 
+                document.getElementById('ghToken').value = state.ghToken; 
+                document.getElementById('ghOwner').value = state.ghOwner; 
+                document.getElementById('ghRepo').value = state.ghRepo; 
             } 
         }
         
         function saveSettings() {
             state.apiKey = document.getElementById('cfgKey').value.trim();
-            // Nếu xóa trống thì lấy mặc định
-            const tk = document.getElementById('ghToken').value.trim();
-            state.ghToken = tk || ENV.GH_TOKEN;
-            
+            state.ghToken = document.getElementById('ghToken').value.trim();
             state.ghOwner = document.getElementById('ghOwner').value.trim();
             state.ghRepo = document.getElementById('ghRepo').value.trim();
 
