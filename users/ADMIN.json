@@ -16,6 +16,22 @@
           "text": "Chào ADMIN! Tôi có thể giúp gì cho bạn?"
         }
       ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "chào"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Chào ADMIN. Có gì tôi có thể hỗ trợ bạn không?"
+        }
+      ]
     }
   ]
 }
