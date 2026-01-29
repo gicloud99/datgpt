@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DatGPT - Chat & Live Voice</title>
+    <title>DatGPT Ultimate - Voice & Call</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
@@ -17,134 +17,214 @@
             --card: #1e293b;
             --accent: #38bdf8;
             --text: #ffffff;
+            --border: rgba(255,255,255,0.1);
         }
 
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        body { 
+            margin: 0; background: var(--bg); color: var(--text); 
+            font-family: 'Plus Jakarta Sans', sans-serif; height: 100vh; 
+            overflow: hidden; display: flex; flex-direction: column; 
+        }
 
         /* HEADER */
-        header { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; background: #0f172a; z-index: 10; }
-        .brand { font-weight: 700; font-size: 18px; color: var(--accent); }
-
-        /* CHAT UI (TEXT) */
-        #chat-interface { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        #chat-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        
-        .msg { max-width: 85%; padding: 10px 15px; border-radius: 18px; font-size: 15px; line-height: 1.5; }
-        .user { align-self: flex-end; background: var(--accent); color: #000; border-bottom-right-radius: 4px; }
-        .ai { align-self: flex-start; background: var(--card); border: 1px solid rgba(255,255,255,0.1); border-bottom-left-radius: 4px; }
-
-        .input-zone { padding: 15px; background: var(--bg); border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 10px; }
-        textarea { flex: 1; background: var(--card); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 10px; border-radius: 20px; resize: none; height: 45px; }
-        
-        /* Buttons */
-        .btn { border: none; border-radius: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .btn-send { width: 45px; background: var(--accent); color: #000; }
-        
-        /* Nút Chế độ Live nổi bật */
-        .btn-live {
-            background: linear-gradient(135deg, #ef4444, #f43f5e);
-            color: white; padding: 0 15px; font-size: 13px; gap: 5px;
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+        header { 
+            padding: 15px 20px; border-bottom: 1px solid var(--border); 
+            display: flex; justify-content: space-between; align-items: center; background: #0f172a; 
         }
-        .btn-live:hover { transform: scale(1.05); }
+        .brand { font-weight: 700; font-size: 18px; color: var(--accent); display: flex; align-items: center; gap: 8px;}
 
-        /* VOICE LIVE OVERLAY (Full Screen) */
-        #live-overlay {
-            position: fixed; inset: 0; background: #020617; z-index: 100;
+        /* CHAT AREA */
+        #chat-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
+        
+        .msg-row { display: flex; gap: 10px; }
+        .user { flex-direction: row-reverse; }
+        
+        .bubble { 
+            max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 15px; line-height: 1.5; 
+            position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .user .bubble { background: var(--accent); color: #09090b; border-bottom-right-radius: 4px; font-weight: 500; }
+        .ai .bubble { background: var(--card); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+
+        /* INPUT AREA */
+        .input-wrapper { padding: 15px; background: var(--bg); border-top: 1px solid var(--border); }
+        .input-box { 
+            background: var(--card); border: 1px solid var(--border); 
+            border-radius: 24px; padding: 5px 10px; display: flex; align-items: center; gap: 8px; 
+        }
+        
+        textarea { 
+            flex: 1; background: transparent; border: none; color: white; 
+            padding: 12px 5px; resize: none; height: 44px; font-size: 15px; font-family: inherit;
+        }
+
+        /* BUTTONS */
+        .btn-icon {
+            width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; background: transparent; color: #94a3b8;
+            transition: 0.2s;
+        }
+        .btn-icon:hover { background: rgba(255,255,255,0.1); color: white; }
+
+        /* Nút Mic (Dictation) */
+        .btn-mic.active { color: #ef4444; animation: pulse 1.5s infinite; }
+
+        /* Nút Phone (Call) - MỚI */
+        .btn-phone { 
+            background: rgba(34, 197, 94, 0.1); color: #22c55e; 
+        }
+        .btn-phone:hover { background: #22c55e; color: white; box-shadow: 0 0 10px #22c55e; }
+
+        /* Nút Send */
+        .btn-send { background: var(--accent); color: #000; }
+
+        /* LIVE CALL OVERLAY */
+        #call-overlay {
+            position: fixed; inset: 0; background: #020617; z-index: 999;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             transition: transform 0.3s ease; transform: translateY(100%);
         }
-        #live-overlay.active { transform: translateY(0); }
+        #call-overlay.active { transform: translateY(0); }
 
-        /* Visualizer (Hiệu ứng vòng tròn) */
-        .visualizer {
-            width: 150px; height: 150px; border-radius: 50%;
+        .avatar-glow {
+            width: 140px; height: 140px; border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
             display: flex; align-items: center; justify-content: center;
-            margin-bottom: 50px; position: relative; transition: 0.3s;
+            margin-bottom: 40px; position: relative;
         }
-
-        /* Trạng thái vòng tròn */
-        .state-listening { background: var(--accent); box-shadow: 0 0 30px var(--accent); animation: breathe 2s infinite; }
-        .state-speaking { background: #22c55e; box-shadow: 0 0 30px #22c55e; animation: bounce 1s infinite; }
-        .state-thinking { background: #eab308; box-shadow: 0 0 30px #eab308; animation: spin 1s infinite; }
-
-        .status-text { font-size: 20px; font-weight: 600; margin-bottom: 20px; color: #94a3b8; }
-        .live-transcript { font-size: 16px; color: white; text-align: center; max-width: 80%; opacity: 0.8; height: 60px; }
+        
+        /* Hiệu ứng cuộc gọi */
+        .status-listening .avatar-glow { animation: ripple 1.5s infinite; box-shadow: 0 0 30px var(--accent); }
+        .status-speaking .avatar-glow { animation: bounce 1s infinite; background: #22c55e; box-shadow: 0 0 30px #22c55e; }
+        
+        .call-status { font-size: 18px; color: #cbd5e1; margin-bottom: 20px; font-weight: 500; }
+        .live-caption { height: 50px; color: #64748b; font-size: 14px; text-align: center; padding: 0 20px; }
 
         .btn-hangup {
-            margin-top: 40px; background: rgba(255, 255, 255, 0.1); 
-            color: white; padding: 15px 40px; border-radius: 30px; 
-            border: 1px solid rgba(255,255,255,0.2); font-size: 16px;
+            background: #ef4444; color: white; padding: 15px 40px; border-radius: 30px; 
+            border: none; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 30px;
         }
-        .btn-hangup:hover { background: #ef4444; border-color: #ef4444; }
 
-        @keyframes breathe { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
-        @keyframes spin { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-        
-        .hidden { display: none; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes ripple { 0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(56, 189, 248, 0); } 100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); } }
+        @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="brand">DatGPT</div>
-        <button class="btn btn-live" onclick="startLiveMode()">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            Chế độ Live
-        </button>
+        <div class="brand">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+            DatGPT 2.5
+        </div>
+        <div style="font-size:12px; opacity:0.7" id="user-display">Guest</div>
     </header>
 
-    <div id="chat-interface">
-        <div id="chat-area"></div>
-        <div class="input-zone">
-            <textarea id="inp" placeholder="Nhắn tin (Flash Lite)..."></textarea>
-            <button class="btn btn-send" onclick="handleChat()">➤</button>
+    <div id="chat-area"></div>
+
+    <div class="input-wrapper">
+        <div class="input-box">
+            <button class="btn-icon" onclick="alert('Tính năng ảnh đang cập nhật')">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </button>
+            
+            <textarea id="inp" placeholder="Nhập tin nhắn..." rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+            
+            <button class="btn-icon btn-mic" id="btn-dictate" title="Nhập bằng giọng nói" onclick="toggleDictation()">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+            </button>
+
+            <button class="btn-icon btn-phone" title="Gọi điện trực tiếp" onclick="startCallMode()">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </button>
+            
+            <button class="btn-icon btn-send" onclick="handleSend()">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
         </div>
     </div>
 
-    <div id="live-overlay">
-        <div class="visualizer state-listening" id="viz">
-            <svg id="icon-mic" width="50" height="50" fill="black" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+    <div id="call-overlay">
+        <div class="avatar-glow">
+            <svg width="60" height="60" fill="white" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
         </div>
-        <div class="status-text" id="status">Đang nghe...</div>
-        <div class="live-transcript" id="transcript"></div>
-        <button class="btn btn-hangup" onclick="endLiveMode()">Kết thúc cuộc gọi</button>
+        <div class="call-status" id="call-status-txt">Đang kết nối...</div>
+        <div class="live-caption" id="live-caption"></div>
+        <button class="btn-hangup" onclick="endCallMode()">Kết thúc</button>
     </div>
 
     <script>
-        // === CẤU HÌNH ===
+        // === CẤU HÌNH API ===
         const CONFIG = {
             apiKey: "AIzaSyA7YEavMh6_c2qvvw1oMgChgXwzh-KsFDo", 
             
-            // Model Chat thường
-            chatModel: "gemini-2.5-flash-lite", 
+            // Model cho Chat Text (Nhanh/Rẻ)
+            chatModel: "gemini-2.5-flash-lite",
             
-            // Model Voice Live
-            voiceModel: "gemini-2.5-flash-native-audio" 
+            // Model cho Cuộc Gọi (Native Audio)
+            callModel: "gemini-2.5-flash-native-audio"
         };
 
         let history = [];
-        let recognition;
-        let isLiveActive = false;
+        let recognitionDictate; // Mic nhập liệu
+        let recognitionCall;    // Mic cuộc gọi
+        let isCallActive = false;
 
-        // --- 1. XỬ LÝ CHAT THƯỜNG (TEXT) ---
-        async function handleChat() {
+        window.onload = () => {
+            const user = localStorage.getItem('datgpt_user') || "User";
+            document.getElementById('user-display').innerText = user;
+            setupDictation();
+            setupCallVoice();
+            
+            addBubble('ai', `Chào bạn! \n- Dùng 🎤 để nhập văn bản.\n- Dùng 📞 để gọi điện nói chuyện trực tiếp.`);
+        };
+
+        // ==========================================
+        // 1. CHỨC NĂNG MIC (CHỈ CHUYỂN GIỌNG NÓI -> VĂN BẢN)
+        // ==========================================
+        function setupDictation() {
+            if ('webkitSpeechRecognition' in window) {
+                recognitionDictate = new webkitSpeechRecognition();
+                recognitionDictate.lang = 'vi-VN';
+                recognitionDictate.continuous = false;
+                
+                recognitionDictate.onstart = () => document.getElementById('btn-dictate').classList.add('active');
+                recognitionDictate.onend = () => document.getElementById('btn-dictate').classList.remove('active');
+                
+                recognitionDictate.onresult = (e) => {
+                    const transcript = e.results[0][0].transcript;
+                    const inp = document.getElementById('inp');
+                    // Chỉ điền vào ô input, KHÔNG GỬI
+                    inp.value += (inp.value ? ' ' : '') + transcript;
+                    inp.style.height = 'auto'; inp.style.height = inp.scrollHeight + 'px';
+                };
+            }
+        }
+
+        function toggleDictation() {
+            const btn = document.getElementById('btn-dictate');
+            if (btn.classList.contains('active')) recognitionDictate.stop();
+            else recognitionDictate.start();
+        }
+
+        // ==========================================
+        // 2. CHỨC NĂNG CHAT (TEXT)
+        // ==========================================
+        async function handleSend() {
             const inp = document.getElementById('inp');
             const text = inp.value.trim();
             if(!text) return;
 
             addBubble('user', text);
-            inp.value = '';
+            inp.value = ''; inp.style.height = '44px';
 
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.chatModel}:generateContent?key=${CONFIG.apiKey}`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        contents: [...history, { role: "user", parts: [{ text }] }]
-                    })
+                    body: JSON.stringify({ contents: [...history, {role: "user", parts: [{text}]}] })
                 });
+                
                 const data = await res.json();
                 const reply = data.candidates[0].content.parts[0].text;
                 
@@ -152,134 +232,124 @@
                 history.push({role: "user", parts: [{text}]});
                 history.push({role: "model", parts: [{text: reply}]});
             } catch(e) {
-                addBubble('ai', "Lỗi kết nối hoặc tên model chưa đúng.");
+                addBubble('ai', "Lỗi kết nối API.");
             }
         }
 
-        function addBubble(role, text) {
-            const area = document.getElementById('chat-area');
-            area.innerHTML += `<div class="msg ${role}">${marked.parse(text)}</div>`;
-            area.scrollTop = area.scrollHeight;
-        }
-
-        // --- 2. XỬ LÝ LIVE VOICE (REAL-TIME) ---
-        
-        function setupVoice() {
+        // ==========================================
+        // 3. CHỨC NĂNG GỌI ĐIỆN (LIVE CALL)
+        // ==========================================
+        function setupCallVoice() {
             if ('webkitSpeechRecognition' in window) {
-                recognition = new webkitSpeechRecognition();
-                recognition.lang = 'vi-VN';
-                recognition.continuous = false; 
-                recognition.interimResults = false;
+                recognitionCall = new webkitSpeechRecognition();
+                recognitionCall.lang = 'vi-VN';
+                recognitionCall.continuous = false; 
 
-                recognition.onstart = () => updateLiveUI('listening');
+                recognitionCall.onstart = () => updateCallStatus('listening');
                 
-                recognition.onresult = (event) => {
-                    const text = event.results[0][0].transcript;
-                    document.getElementById('transcript').innerText = `"${text}"`;
-                    processLiveQuery(text); // Gửi đi xử lý ngay
+                recognitionCall.onresult = (e) => {
+                    const text = e.results[0][0].transcript;
+                    document.getElementById('live-caption').innerText = `"${text}"`;
+                    processCallResponse(text); // Gửi đi xử lý ngay
                 };
 
-                recognition.onend = () => {
-                    // Nếu đang Live mà mic tắt (do im lặng), và AI chưa nói -> Bật lại mic ngay
-                    if (isLiveActive && document.getElementById('status').innerText !== 'AI đang nói...') {
-                         try { recognition.start(); } catch(e) {}
+                recognitionCall.onend = () => {
+                    // Nếu đang gọi mà mic tắt (do im lặng) -> Bật lại mic (Loop)
+                    // Chỉ bật lại nếu AI KHÔNG ĐANG NÓI
+                    const status = document.getElementById('call-status-txt').innerText;
+                    if (isCallActive && status !== 'AI đang nói...') {
+                        try { recognitionCall.start(); } catch(e){}
                     }
                 };
-            } else {
-                alert("Trình duyệt không hỗ trợ Web Speech API");
             }
         }
 
-        // Logic gửi API cho Voice Mode
-        async function processLiveQuery(text) {
-            updateLiveUI('thinking');
-            
+        async function processCallResponse(text) {
+            updateCallStatus('thinking');
             try {
-                // Dùng model Native Audio cho Voice
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.voiceModel}:generateContent?key=${CONFIG.apiKey}`, {
+                // Dùng model Native Audio
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.callModel}:generateContent?key=${CONFIG.apiKey}`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         contents: [
-                            { role: "user", parts: [{ text: "System: Trả lời ngắn gọn như đang nói chuyện trực tiếp." }] },
+                            { role: "user", parts: [{ text: "System: Trả lời ngắn gọn như hội thoại trực tiếp." }] },
                             ...history, 
-                            { role: "user", parts: [{ text }] } 
+                            { role: "user", parts: [{ text }] }
                         ]
                     })
                 });
-
+                
                 const data = await res.json();
                 const reply = data.candidates[0].content.parts[0].text;
-
-                // Cập nhật history chung
+                
+                // Lưu vào history để chat tiếp cũng hiểu
                 history.push({role: "user", parts: [{text}]});
                 history.push({role: "model", parts: [{text: reply}]});
 
-                // Đọc to câu trả lời
-                speakLive(reply);
+                speakResponse(reply);
 
-            } catch (e) {
-                speakLive("Xin lỗi, tôi bị mất kết nối.");
+            } catch(e) {
+                speakResponse("Mất kết nối.");
             }
         }
 
-        // Text-to-Speech và Vòng lặp
-        function speakLive(text) {
-            updateLiveUI('speaking');
+        function speakResponse(text) {
+            updateCallStatus('speaking');
             window.speechSynthesis.cancel();
-            
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'vi-VN';
             utterance.rate = 1.1;
 
             utterance.onend = () => {
-                // QUAN TRỌNG: AI nói xong -> Bật lại mic ngay lập tức
-                if (isLiveActive) {
-                    updateLiveUI('listening');
-                    setTimeout(() => { try { recognition.start(); } catch(e){} }, 300);
+                // AI nói xong -> Bật lại Mic để nghe tiếp
+                if (isCallActive) {
+                    updateCallStatus('listening');
+                    setTimeout(() => { try { recognitionCall.start(); } catch(e){} }, 500);
                 }
             };
-
             window.speechSynthesis.speak(utterance);
         }
 
-        // --- 3. ĐIỀU KHIỂN GIAO DIỆN ---
-
-        function startLiveMode() {
-            isLiveActive = true;
-            document.getElementById('live-overlay').classList.add('active');
-            setupVoice();
-            try { recognition.start(); } catch(e) {}
+        // --- ĐIỀU KHIỂN GIAO DIỆN CUỘC GỌI ---
+        function startCallMode() {
+            isCallActive = true;
+            document.getElementById('call-overlay').classList.add('active');
+            updateCallStatus('listening');
+            try { recognitionCall.start(); } catch(e){}
         }
 
-        function endLiveMode() {
-            isLiveActive = false;
-            document.getElementById('live-overlay').classList.remove('active');
+        function endCallMode() {
+            isCallActive = false;
+            document.getElementById('call-overlay').classList.remove('active');
             window.speechSynthesis.cancel();
-            try { recognition.stop(); } catch(e) {}
+            try { recognitionCall.stop(); } catch(e){}
         }
 
-        function updateLiveUI(state) {
-            const viz = document.getElementById('viz');
-            const status = document.getElementById('status');
+        function updateCallStatus(state) {
+            const overlay = document.getElementById('call-overlay');
+            const txt = document.getElementById('call-status-txt');
             
-            // Reset class
-            viz.className = 'visualizer';
+            overlay.classList.remove('status-listening', 'status-speaking');
             
-            if (state === 'listening') {
-                viz.classList.add('state-listening');
-                status.innerText = "Đang nghe bạn...";
+            if(state === 'listening') {
+                overlay.classList.add('status-listening');
+                txt.innerText = "Đang nghe bạn...";
             } else if (state === 'thinking') {
-                viz.classList.add('state-thinking');
-                status.innerText = "Đang suy nghĩ...";
+                txt.innerText = "Đang suy nghĩ...";
             } else if (state === 'speaking') {
-                viz.classList.add('state-speaking');
-                status.innerText = "AI đang nói...";
+                overlay.classList.add('status-speaking');
+                txt.innerText = "AI đang nói...";
             }
         }
-        
-        // Enter để chat
-        document.getElementById('inp').onkeydown = (e) => { if(e.key === 'Enter') handleChat(); }
+
+        function addBubble(role, text) {
+            const area = document.getElementById('chat-area');
+            area.innerHTML += `<div class="msg-row ${role}"><div class="bubble">${marked.parse(text)}</div></div>`;
+            area.scrollTop = area.scrollHeight;
+        }
+
+        document.getElementById('inp').onkeydown = (e) => { if(e.key==='Enter') handleSend(); }
 
     </script>
 </body>
