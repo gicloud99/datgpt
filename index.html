@@ -3,289 +3,274 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DatGPT 4.0 - Live Conversation</title>
+    <title>DatGPT 2.5 - Hybrid Native</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap');
 
         :root {
-            --bg-body: #020617;
-            --accent: #38bdf8;
-            --text-primary: #f8fafc;
+            --bg: #0b0f19;
+            --card: #1b2230;
+            --accent: #00dc82; /* Màu xanh Gemini mới */
+            --text: #ffffff;
+            --border: rgba(255,255,255,0.08);
         }
 
         body { 
-            margin: 0; background: var(--bg-body); color: var(--text-primary); 
-            font-family: 'Plus Jakarta Sans', sans-serif; height: 100vh; overflow: hidden; 
+            margin: 0; background: var(--bg); color: var(--text); 
+            font-family: 'Plus Jakarta Sans', sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; 
         }
-
-        #app-container { display: flex; flex-direction: column; height: 100%; max-width: 1000px; margin: 0 auto; }
 
         /* HEADER */
-        header { padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 10; }
-        .logo { font-weight: 700; font-size: 18px; }
-
-        /* CHAT AREA (Ẩn đi khi bật chế độ Voice) */
-        #chat-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
-        .msg-row { display: flex; gap: 10px; }
-        .user { flex-direction: row-reverse; }
-        .bubble { max-width: 80%; padding: 10px 15px; border-radius: 15px; background: rgba(255,255,255,0.1); font-size: 15px; }
-        .user .bubble { background: var(--accent); color: #000; }
+        header { 
+            padding: 15px 20px; border-bottom: 1px solid var(--border); 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: rgba(11, 15, 25, 0.95);
+        }
+        .brand { font-weight: 700; font-size: 18px; display: flex; align-items: center; gap: 10px; color: var(--accent); }
+        .user-badge { font-size: 12px; padding: 4px 12px; border-radius: 20px; background: rgba(255,255,255,0.1); }
+        
+        /* CHAT AREA */
+        #chat-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
+        
+        .msg-row { display: flex; gap: 12px; animation: fadeIn 0.3s ease; }
+        .msg-row.user { flex-direction: row-reverse; }
+        
+        .bubble { 
+            max-width: 85%; padding: 12px 18px; border-radius: 20px; 
+            font-size: 15px; line-height: 1.6; position: relative;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .user .bubble { background: var(--accent); color: #000; border-bottom-right-radius: 4px; font-weight: 500; }
+        .ai .bubble { background: var(--card); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+        
+        /* Model Tags */
+        .model-tag {
+            font-size: 10px; font-family: 'JetBrains Mono', monospace; 
+            margin-bottom: 6px; display: inline-block; padding: 2px 6px; border-radius: 4px;
+            font-weight: bold; letter-spacing: 0.5px;
+        }
+        .tag-lite { background: rgba(250, 204, 21, 0.15); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.3); }
+        .tag-native { background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
 
         /* INPUT AREA */
-        .input-wrapper { padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); background: #0f172a; z-index: 10;}
-        .input-box { display: flex; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 20px; }
-        input { flex: 1; background: transparent; border: none; color: white; outline: none; }
-        .btn { padding: 10px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; }
-        .btn-mic { background: rgba(255,255,255,0.1); color: white; }
-        .btn-send { background: var(--accent); color: black; }
-
-        /* --- VOICE OVERLAY (GIAO DIỆN GỌI ĐIỆN) --- */
-        #voice-overlay {
-            position: fixed; inset: 0; background: #0f172a; z-index: 100;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: transform 0.3s ease; transform: translateY(100%);
-        }
-        #voice-overlay.active { transform: translateY(0); }
-
-        /* Hiệu ứng sóng âm */
-        .voice-visualizer {
-            width: 150px; height: 150px; border-radius: 50%;
-            background: linear-gradient(135deg, #0ea5e9, #6366f1);
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 0 30px rgba(56, 189, 248, 0.5);
-            margin-bottom: 50px;
-            position: relative;
+        .input-zone { padding: 20px; background: var(--bg); border-top: 1px solid var(--border); }
+        .input-box { 
+            background: var(--card); border: 1px solid var(--border); 
+            border-radius: 24px; padding: 8px 10px 8px 20px; display: flex; align-items: flex-end; gap: 12px; 
         }
         
-        .voice-visualizer::after {
-            content: ''; position: absolute; inset: -20px; border-radius: 50%;
-            border: 2px solid var(--accent); opacity: 0;
+        textarea { 
+            flex: 1; background: transparent; border: none; color: white; 
+            padding: 12px 0; resize: none; height: 44px; font-family: inherit; font-size: 15px;
         }
 
-        .speaking .voice-visualizer { animation: pulse 1.5s infinite; }
-        .speaking .voice-visualizer::after { animation: ripple 1.5s infinite; }
-
-        .ai-speaking .voice-visualizer { animation: bounce 1s infinite; background: #22c55e; box-shadow: 0 0 30px #22c55e; }
+        .btn-icon {
+            width: 44px; height: 44px; border-radius: 50%; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; background: transparent; color: #94a3b8;
+            transition: all 0.2s;
+        }
+        .btn-icon:hover { background: rgba(255,255,255,0.1); color: white; }
+        
+        .btn-mic.listening { 
+            background: #ef4444; color: white; animation: pulse 1.5s infinite; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+        }
+        .btn-send { background: var(--accent); color: #000; }
 
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        @keyframes ripple { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.5); opacity: 0; } }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-
-        .status-text { font-size: 18px; color: var(--text-secondary); margin-bottom: 30px; font-weight: 500; }
-        
-        .btn-hangup {
-            background: #ef4444; color: white; padding: 15px 40px; 
-            border-radius: 30px; border: none; font-weight: bold; font-size: 16px; cursor: pointer;
-            box-shadow: 0 5px 20px rgba(239, 68, 68, 0.4);
-        }
-
-        .hidden { display: none !important; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <div id="app-container">
-        <header>
-            <div class="logo">DatGPT Live</div>
-            <div id="user-info" style="font-size: 12px; opacity: 0.7;"></div>
-        </header>
+    <header>
+        <div class="brand">DatGPT 2.5</div>
+        <div id="user-badge" class="user-badge">...</div>
+    </header>
 
-        <div id="chat-area">
-            </div>
+    <div id="chat-area"></div>
 
-        <div class="input-wrapper">
-            <div class="input-box">
-                <input type="text" id="user-input" placeholder="Nhập tin nhắn...">
-                <button class="btn btn-mic" onclick="startVoiceMode()">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-                </button>
-                <button class="btn btn-send" onclick="handleSend()">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                </button>
-            </div>
+    <div class="input-zone">
+        <div class="input-box">
+            <textarea id="inp" placeholder="Nhập tin nhắn..." rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+            
+            <button class="btn-icon btn-mic" id="mic-btn" onclick="toggleMic()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+            </button>
+            
+            <button class="btn-icon btn-send" onclick="handleSend('text')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
         </div>
-    </div>
-
-    <div id="voice-overlay">
-        <div class="voice-visualizer">
-            <svg width="50" height="50" fill="white" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-        </div>
-        <div id="voice-status" class="status-text">Đang nghe...</div>
-        <div id="transcript-preview" style="height: 40px; color: #94a3b8; font-size: 14px; margin-bottom: 20px; text-align: center; padding: 0 20px;"></div>
-        <button class="btn-hangup" onclick="endVoiceMode()">Kết thúc cuộc gọi</button>
     </div>
 
     <script>
-        // === CẤU HÌNH ===
+        // === CẤU HÌNH MODEL MỚI NHẤT ===
         const CONFIG = {
-            apiKey: "AIzaSyA7YEavMh6_c2qvvw1oMgChgXwzh-KsFDo", // API Key của bạn
-            model: "gemini-2.5-flash-lite", // Model xử lý nội dung
+            apiKey: "AIzaSyA7YEavMh6_c2qvvw1oMgChgXwzh-KsFDo", // KEY CỦA BẠN
+            
+            // Model 1: Chuyên Text (Chat thường)
+            chatModel: "gemini-2.5-flash-lite", 
+            
+            // Model 2: Chuyên Voice (Native Audio Dialog)
+            voiceModel: "gemini-2.5-flash-native-audio" 
         };
+
+        // --- LƯU Ý KHI CHẠY ---
+        // Nếu API báo lỗi 404 Model Not Found (do Google rollout theo tài khoản), 
+        // bạn hãy đổi tạm về "gemini-2.0-flash-lite-preview-02-05" và "gemini-2.0-flash-exp" nhé.
 
         let currentUser = localStorage.getItem('datgpt_user') || "Bạn";
         let history = [];
-        
-        // Biến điều khiển Voice
         let recognition;
-        let isVoiceActive = false;
-        let isAIThinking = false;
 
         // --- KHỞI TẠO ---
         window.onload = () => {
             if(!localStorage.getItem('datgpt_user')) {
-                const name = prompt("Tên bạn là gì?");
-                if(name) {
-                    currentUser = name;
-                    localStorage.setItem('datgpt_user', name);
-                }
+                currentUser = prompt("Tên bạn là gì?") || "User";
+                localStorage.setItem('datgpt_user', currentUser);
             }
-            document.getElementById('user-info').innerText = `Người dùng: ${currentUser}`;
+            document.getElementById('user-badge').innerText = currentUser;
             setupRecognition();
+            
+            // Chào mừng
+            addMessage('ai', `Chào **${currentUser}**! \n- Chat: **Flash Lite 2.5** (Text-out)\n- Voice: **Flash Native 2.5** (Audio Dialog)`, 'system');
         };
 
-        // --- LOGIC GỬI TIN NHẮN (API) ---
-        async function chatWithGemini(text) {
-            // Hiển thị tin nhắn người dùng
-            addBubble('user', text);
-            
-            // Nếu đang voice mode -> Cập nhật trạng thái
-            if(isVoiceActive) updateStatus("AI đang suy nghĩ...", false);
+        // --- LOGIC XỬ LÝ ---
+        async function handleSend(mode, manualText = null) {
+            const input = document.getElementById('inp');
+            const text = manualText || input.value.trim();
+            if (!text) return;
+
+            if (mode === 'text') { input.value = ''; input.style.height = '44px'; }
+            addMessage('user', text);
+
+            // 1. CHỌN MODEL DỰA TRÊN TÍNH NĂNG
+            const activeModel = (mode === 'voice') ? CONFIG.voiceModel : CONFIG.chatModel;
+            const modelLabel = (mode === 'voice') ? 'Gemini 2.5 Native Audio' : 'Gemini 2.5 Flash Lite';
+            const tagStyle = (mode === 'voice') ? 'tag-native' : 'tag-lite';
+
+            // 2. TẠO LOADING UI
+            const tempId = 'ai-' + Date.now();
+            addMessage('ai', '...', modelLabel, tagStyle, tempId);
 
             try {
-                // System Instruction để AI trả lời ngắn gọn như đang nói chuyện
-                const systemPrompt = `Bạn đang trong cuộc trò chuyện bằng giọng nói trực tiếp với ${currentUser}. Hãy trả lời thật ngắn gọn, tự nhiên, như một người bạn (không dùng gạch đầu dòng, không quá 2 câu nếu không cần thiết).`;
+                // System Instruction giúp AI nhận diện user
+                const sysPrompt = `User: ${currentUser}. Respond naturally.`;
 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.model}:generateContent?key=${CONFIG.apiKey}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${CONFIG.apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [
-                            { role: "user", parts: [{ text: "System: " + systemPrompt }] },
-                            ...history, 
+                            { role: "user", parts: [{ text: "System: " + sysPrompt }] },
+                            ...history,
                             { role: "user", parts: [{ text }] }
                         ]
                     })
                 });
 
+                if (!response.ok) throw new Error("Model Name Error or API Key limit");
+
                 const data = await response.json();
-                const reply = data.candidates[0].content.parts[0].text;
+                const aiReply = data.candidates[0].content.parts[0].text;
 
-                addBubble('ai', reply);
+                // 3. CẬP NHẬT GIAO DIỆN
+                updateAiMessage(tempId, aiReply, modelLabel, tagStyle);
+
+                // 4. LƯU LỊCH SỬ
                 history.push({ role: "user", parts: [{ text }] });
-                history.push({ role: "model", parts: [{ text: reply }] });
+                history.push({ role: "model", parts: [{ text: aiReply }] });
 
-                // QUAN TRỌNG: Đọc to câu trả lời
-                speak(reply);
+                // 5. NẾU LÀ VOICE MODE -> ĐỌC TO
+                if (mode === 'voice') speak(aiReply);
 
             } catch (e) {
-                console.error(e);
-                if(isVoiceActive) speak("Xin lỗi, tôi bị mất kết nối.");
+                document.getElementById(tempId).innerHTML = `<span style="color:#ef4444">Lỗi: ${e.message} (Kiểm tra lại tên Model trong Config)</span>`;
             }
         }
 
-        // --- LOGIC VOICE (CORE) ---
+        // --- NATIVE AUDIO SIMULATION (TEXT-TO-SPEECH) ---
+        // (Lưu ý: Web Native Audio thực thụ cần WebSocket, đây là giả lập Native Audio output trên trình duyệt)
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const cleanText = text.replace(/[*#`]/g, '');
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = 'vi-VN';
+            utterance.rate = 1.2; // Tốc độ tự nhiên
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- VOICE INPUT ---
         function setupRecognition() {
             if ('webkitSpeechRecognition' in window) {
                 recognition = new webkitSpeechRecognition();
                 recognition.lang = 'vi-VN';
-                recognition.continuous = false; // Ngắt khi ngừng nói để gửi ngay
+                recognition.continuous = false;
                 recognition.interimResults = false;
 
                 recognition.onstart = () => {
-                    if(isVoiceActive) {
-                        updateStatus("Đang nghe bạn nói...", true);
-                        document.getElementById('voice-overlay').classList.add('speaking');
-                    }
+                    document.getElementById('mic-btn').classList.add('listening');
+                    document.getElementById('inp').placeholder = "Đang lắng nghe...";
                 };
 
                 recognition.onend = () => {
-                    document.getElementById('voice-overlay').classList.remove('speaking');
-                    // Nếu chế độ Voice đang bật và AI KHÔNG đang suy nghĩ/nói -> Bật lại mic (Loop)
-                    // Logic này sẽ được xử lý trong hàm onresult và hàm speak
+                    document.getElementById('mic-btn').classList.remove('listening');
+                    document.getElementById('inp').placeholder = "Nhập tin nhắn...";
                 };
 
                 recognition.onresult = (event) => {
-                    const text = event.results[0][0].transcript;
-                    document.getElementById('transcript-preview').innerText = `"${text}"`;
-                    
-                    if (isVoiceActive && text.trim()) {
-                        chatWithGemini(text); // Gửi đi ngay khi nói xong
-                    }
+                    const transcript = event.results[0][0].transcript;
+                    handleSend('voice', transcript); // Gửi bằng Voice Model
                 };
-            } else {
-                alert("Trình duyệt không hỗ trợ Voice API");
             }
         }
 
-        // --- TEXT TO SPEECH & AUTO RESTART MIC ---
-        function speak(text) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'vi-VN';
-            utterance.rate = 1.1;
-
-            // Khi AI bắt đầu nói
-            utterance.onstart = () => {
-                if(isVoiceActive) {
-                    updateStatus("AI đang nói...", false);
-                    document.getElementById('voice-overlay').classList.add('ai-speaking');
-                }
-            };
-
-            // Khi AI nói XONG -> TỰ ĐỘNG BẬT LẠI MIC (Tạo vòng lặp hội thoại)
-            utterance.onend = () => {
-                document.getElementById('voice-overlay').classList.remove('ai-speaking');
-                if (isVoiceActive) {
-                    // Chờ 0.5s rồi bật mic lại cho đỡ bị dội âm
-                    setTimeout(() => {
-                        try { recognition.start(); } catch(e) {} 
-                    }, 500);
-                }
-            };
-
-            window.speechSynthesis.speak(utterance);
+        function toggleMic() {
+            const btn = document.getElementById('mic-btn');
+            if (btn.classList.contains('listening')) recognition.stop();
+            else recognition.start();
         }
 
-        // --- UI CONTROL ---
-        function startVoiceMode() {
-            isVoiceActive = true;
-            document.getElementById('voice-overlay').classList.add('active');
-            try { recognition.start(); } catch(e) {}
-        }
-
-        function endVoiceMode() {
-            isVoiceActive = false;
-            window.speechSynthesis.cancel();
-            recognition.stop();
-            document.getElementById('voice-overlay').classList.remove('active');
-        }
-
-        function updateStatus(msg, isUserSpeaking) {
-            const el = document.getElementById('voice-status');
-            el.innerText = msg;
-            el.style.color = isUserSpeaking ? '#38bdf8' : '#22c55e';
-        }
-
-        // --- CHAT UI ---
-        function handleSend() {
-            const input = document.getElementById('user-input');
-            if(input.value.trim()) {
-                chatWithGemini(input.value);
-                input.value = '';
-            }
-        }
-
-        function addBubble(role, text) {
+        // --- UI HELPER ---
+        function addMessage(role, text, label = null, tagStyle = '', id = null) {
             const area = document.getElementById('chat-area');
             const row = document.createElement('div');
             row.className = `msg-row ${role}`;
-            row.innerHTML = `<div class="bubble">${marked.parse(text)}</div>`;
+            
+            let labelHtml = '';
+            if (role === 'ai' && label) {
+                labelHtml = `<span class="model-tag ${tagStyle}">${label}</span>`;
+            }
+
+            row.innerHTML = `
+                <div class="bubble" ${id ? `id="${id}"` : ''}>
+                    ${labelHtml}
+                    <div class="content">${marked.parse(text)}</div>
+                </div>`;
             area.appendChild(row);
             area.scrollTop = area.scrollHeight;
+        }
+
+        function updateAiMessage(id, text, label, tagStyle) {
+            const bubble = document.getElementById(id);
+            if(bubble) {
+                bubble.innerHTML = `
+                    <span class="model-tag ${tagStyle}">${label}</span>
+                    <div class="content">${marked.parse(text)}</div>
+                `;
+                bubble.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+            }
+        }
+
+        document.getElementById('inp').onkeydown = (e) => {
+            if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend('text'); }
         }
     </script>
 </body>
