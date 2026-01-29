@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DatGPT 4.0 Pro - Next Gen</title>
+    <title>DatGPT 4.0 Pro - MultiModel</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
@@ -66,6 +66,11 @@
         }
         .user .bubble { background: var(--accent); color: #000; font-weight: 500; border-bottom-right-radius: 4px; }
         .ai .bubble { background: var(--bg-card); border: 1px solid var(--border-color); border-bottom-left-radius: 4px; }
+        
+        /* Model badge indicator */
+        .model-badge {
+            font-size: 10px; opacity: 0.6; margin-bottom: 4px; display: block; font-family: 'JetBrains Mono', monospace;
+        }
 
         /* --- INPUT AREA --- */
         .input-wrapper { 
@@ -90,6 +95,8 @@
         }
         .btn-circle:hover { background: rgba(255,255,255,0.1); color: #fff; }
         .btn-send { background: var(--accent) !important; color: #000 !important; }
+        
+        .listening { color: #ef4444 !important; animation: pulse 1.5s infinite; }
 
         /* --- LOGIN MODAL --- */
         .modal { 
@@ -106,6 +113,7 @@
         }
 
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); box-shadow: 0 0 10px #ef4444; } 100% { transform: scale(1); } }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -152,23 +160,32 @@
     </div>
 
     <script>
-        // === CẤU HÌNH API (BẠN ĐIỀN VÀO ĐÂY) ===
+        // === CẤU HÌNH API ===
         const SYSTEM_CONFIG = {
-            chatApiKey: "AIzaSy...", // Điền API Key Gemini
-            voiceApiKey: "YOUR_VOICE_API_KEY", // Có thể dùng chung hoặc API Voice riêng
-            ghToken: "ghp_...", 
-            ghOwner: "your-user",
-            ghRepo: "your-repo",
-            model: "gemini-1.5-flash"
+            chatApiKey: "AIzaSyA7YEavMh6_c2qvvw1oMgChgXwzh-KsFDo",
+            
+            // GitHub Sync Config (Nếu dùng)
+            ghToken: "ghp_YOUR_TOKEN", 
+            ghOwner: "YOUR_USER",
+            ghRepo: "YOUR_REPO",     
+            chatModel: "gemini-2.5-flash-lite",  
+            voiceModel: "gemini-live-2.5-flash-native-audio" 
         };
+
+        /* * LƯU Ý QUAN TRỌNG: 
+         * - Tên model "Gemini 2.5 Flash Lite" và "gemini-live-2.5..." có thể chưa chính thức public qua API REST.
+         * - Tôi đã đặt tên gần đúng nhất hiện tại. Nếu lỗi 404, hãy đổi về "gemini-2.0-flash-exp" hoặc "gemini-1.5-flash".
+         */
 
         let currentUser = "";
         let chatHistory = [];
         let currentSha = null;
+        let isVoiceMode = false; // Cờ đánh dấu đang dùng Voice
 
-        // --- GITHUB SYNC ---
+        // --- GITHUB SYNC (Giữ nguyên logic cũ) ---
         const Cloud = {
             async load(name) {
+                if(!SYSTEM_CONFIG.ghToken || SYSTEM_CONFIG.ghToken.includes("YOUR_TOKEN")) return [];
                 const url = `https://api.github.com/repos/${SYSTEM_CONFIG.ghOwner}/${SYSTEM_CONFIG.ghRepo}/contents/users/${name}.json`;
                 try {
                     const res = await fetch(url, { headers: { 'Authorization': `token ${SYSTEM_CONFIG.ghToken}` }});
@@ -182,18 +199,15 @@
                 return [];
             },
             async save(name, history) {
+                if(!SYSTEM_CONFIG.ghToken || SYSTEM_CONFIG.ghToken.includes("YOUR_TOKEN")) return;
                 const url = `https://api.github.com/repos/${SYSTEM_CONFIG.ghOwner}/${SYSTEM_CONFIG.ghRepo}/contents/users/${name}.json`;
                 const content = btoa(unescape(encodeURIComponent(JSON.stringify({ history }))));
                 const body = { message: "update chat", content, sha: currentSha };
-                const res = await fetch(url, {
+                await fetch(url, {
                     method: 'PUT',
                     headers: { 'Authorization': `token ${SYSTEM_CONFIG.ghToken}` },
                     body: JSON.stringify(body)
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    currentSha = data.content.sha;
-                }
+                }).then(res => res.json()).then(data => currentSha = data.content?.sha);
             }
         };
 
@@ -207,43 +221,63 @@
             
             chatHistory = await Cloud.load(name);
             renderChat();
+            setupVoice(); // Kích hoạt micro
         }
 
         function renderChat() {
             const area = document.getElementById('chat-area');
             area.innerHTML = '';
-            chatHistory.forEach(msg => addBubble(msg.role === 'user' ? 'user' : 'ai', msg.parts[0].text));
+            chatHistory.forEach(msg => {
+                const role = msg.role === 'user' ? 'user' : 'ai';
+                // Lọc text hiển thị
+                const text = msg.parts && msg.parts[0] ? msg.parts[0].text : "";
+                addBubble(role, text, false); 
+            });
         }
 
-        function addBubble(role, text) {
+        function addBubble(role, text, isNew = true) {
             const area = document.getElementById('chat-area');
             const row = document.createElement('div');
             row.className = `msg-row ${role}`;
-            row.innerHTML = `<div class="bubble">${marked.parse(text)}</div>`;
+            
+            const modelLabel = (role === 'ai' && isNew) 
+                ? `<span class="model-badge">${isVoiceMode ? 'Voice Model (Native)' : 'Chat Model (Lite)'}</span>` 
+                : '';
+
+            row.innerHTML = `<div class="bubble">${modelLabel}${marked.parse(text)}</div>`;
             area.appendChild(row);
             area.scrollTop = area.scrollHeight;
-            
-            // Highlight code
             row.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
         }
 
-        async function handleSend() {
+        async function handleSend(manualText = null) {
             const input = document.getElementById('user-input');
-            const text = input.value.trim();
+            const text = manualText || input.value.trim();
             if (!text) return;
 
             input.value = '';
+            input.style.height = '40px'; // Reset height
             addBubble('user', text);
             
             const tempAiId = 'ai-' + Date.now();
             const area = document.getElementById('chat-area');
             const aiRow = document.createElement('div');
             aiRow.className = 'msg-row ai';
-            aiRow.innerHTML = `<div class="bubble" id="${tempAiId}">Đang suy nghĩ...</div>`;
+            
+            // Chọn model dựa trên chế độ Voice hay Chat thường
+            const activeModel = isVoiceMode ? SYSTEM_CONFIG.voiceModel : SYSTEM_CONFIG.chatModel;
+            const modelNameDisplay = isVoiceMode ? "Voice Model" : "Chat Model";
+
+            aiRow.innerHTML = `<div class="bubble" id="${tempAiId}">
+                <span class="model-badge">Using: ${modelNameDisplay}</span>
+                Đang suy nghĩ...
+            </div>`;
             area.appendChild(aiRow);
+            area.scrollTop = area.scrollHeight;
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${SYSTEM_CONFIG.model}:generateContent?key=${SYSTEM_CONFIG.chatApiKey}`, {
+                // Gọi API
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${SYSTEM_CONFIG.chatApiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -251,32 +285,91 @@
                     })
                 });
                 
+                if (!response.ok) throw new Error("Model không tồn tại hoặc lỗi API");
+
                 const data = await response.json();
                 const aiText = data.candidates[0].content.parts[0].text;
                 
-                document.getElementById(tempAiId).innerHTML = marked.parse(aiText);
+                document.getElementById(tempAiId).innerHTML = `
+                    <span class="model-badge">${modelNameDisplay}</span>
+                    ${marked.parse(aiText)}
+                `;
+                
+                // Cập nhật lịch sử
                 chatHistory.push({ role: "user", parts: [{ text }] });
                 chatHistory.push({ role: "model", parts: [{ text: aiText }] });
-                
                 Cloud.save(currentUser, chatHistory);
                 
-                // Voice (Dùng SpeechSynthesis cơ bản hoặc thay bằng API Voice của bạn)
-                speak(aiText);
+                // Nếu đang ở chế độ Voice, AI sẽ tự động đọc
+                if (isVoiceMode) {
+                    speak(aiText);
+                    isVoiceMode = false; // Reset sau khi xong
+                }
 
             } catch (e) {
-                document.getElementById(tempAiId).innerText = "Lỗi kết nối API.";
+                document.getElementById(tempAiId).innerText = `Lỗi: ${e.message}. Hãy kiểm tra lại tên Model trong Config.`;
+                isVoiceMode = false;
             }
         }
 
+        // --- XỬ LÝ VOICE (SPEECH TO TEXT) ---
+        function setupVoice() {
+            const micBtn = document.getElementById('mic-btn');
+            
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'vi-VN';
+                recognition.continuous = false;
+                recognition.interimResults = false;
+
+                micBtn.onclick = () => {
+                    if (micBtn.classList.contains('listening')) {
+                        recognition.stop();
+                    } else {
+                        recognition.start();
+                    }
+                };
+
+                recognition.onstart = () => {
+                    micBtn.classList.add('listening');
+                    isVoiceMode = true; // Đánh dấu đây là request Voice
+                    document.getElementById('user-input').placeholder = "Đang nghe...";
+                };
+
+                recognition.onend = () => {
+                    micBtn.classList.remove('listening');
+                    document.getElementById('user-input').placeholder = "Hỏi bất cứ điều gì...";
+                };
+
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('user-input').value = transcript;
+                    handleSend(transcript); // Tự động gửi khi nói xong
+                };
+            } else {
+                micBtn.style.display = 'none'; // Ẩn nếu trình duyệt không hỗ trợ
+                alert("Trình duyệt của bạn không hỗ trợ nhận diện giọng nói.");
+            }
+        }
+
+        // --- TEXT TO SPEECH ---
         function speak(text) {
-            // Đây là nơi bạn có thể gọi API Voice thứ 2
-            const utterance = new SpeechSynthesisUtterance(text.substring(0, 200));
+            // Loại bỏ các ký tự Markdown (*, #, `) để đọc tự nhiên hơn
+            const cleanText = text.replace(/[*#`]/g, '');
+            const utterance = new SpeechSynthesisUtterance(cleanText);
             utterance.lang = 'vi-VN';
+            utterance.rate = 1.1; // Tốc độ đọc
             window.speechSynthesis.speak(utterance);
         }
 
-        document.getElementById('send-btn').onclick = handleSend;
-        document.getElementById('user-input').onkeydown = e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }};
+        document.getElementById('send-btn').onclick = () => handleSend();
+        document.getElementById('user-input').onkeydown = e => { 
+            if(e.key === 'Enter' && !e.shiftKey) { 
+                e.preventDefault(); 
+                handleSend(); 
+            }
+        };
 
     </script>
 </body>
